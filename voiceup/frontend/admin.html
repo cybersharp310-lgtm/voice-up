@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>VoiceUp — Admin Dashboard</title>
+  <link rel="stylesheet" href="style.css"/>
+  <style>
+    .admin-stat { background: var(--navy2); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+    .admin-stat-val { font-family: var(--font-head); font-size: 26px; font-weight: 800; }
+    .admin-stat-lbl { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .filter-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+    .chip {
+      padding: 5px 14px; border-radius: 20px; border: 1px solid var(--border);
+      background: transparent; color: var(--muted); font-size: 11px;
+      cursor: pointer; font-family: var(--font-body); transition: all .15s;
+    }
+    .chip.active { border-color: var(--amber); color: var(--amber); background: rgba(245,166,35,.08); }
+    .comp-card { background: var(--navy2); border: 1px solid var(--border); border-radius: 12px; padding: 18px; margin-bottom: 12px; }
+    .comp-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+    .comp-name { font-size: 14px; font-weight: 500; }
+    .comp-dept { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .comp-meta { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+    .comp-desc { font-size: 12px; color: var(--muted); line-height: 1.6; margin-bottom: 10px; }
+    .comp-actions { display: flex; gap: 8px; }
+    .empty-state { text-align: center; padding: 48px 20px; color: var(--muted); }
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,.6);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 100; display: none;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal-box {
+      background: var(--navy2); border: 1px solid var(--border);
+      border-radius: 14px; padding: 28px; width: 90%; max-width: 480px;
+    }
+    .modal-title { font-family: var(--font-head); font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+    .modal-sub { font-size: 12px; color: var(--muted); margin-bottom: 20px; line-height: 1.6; }
+    .detail-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 12px; }
+    .detail-row:last-child { border-bottom: none; }
+    .detail-key { color: var(--muted); }
+  </style>
+</head>
+<body>
+<div id="toast-container"></div>
+
+<!-- Confirm modal -->
+<div class="modal-overlay" id="modal">
+  <div class="modal-box">
+    <div class="modal-title" id="modal-title">Confirm action</div>
+    <div class="modal-sub" id="modal-body">Are you sure?</div>
+    <div class="flex gap-2">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn" id="modal-confirm-btn" onclick="confirmAction()">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<div class="app-layout">
+  <nav class="sidebar">
+    <div class="sb-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#07101f" stroke-width="2.5" stroke-linecap="round" width="18" height="18"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+    </div>
+    <a href="admin.html" class="sb-link active" title="Complaints"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></a>
+    <div class="sb-divider"></div>
+    <div class="sb-bottom">
+      <a class="sb-link" onclick="signOut()" style="cursor:pointer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></a>
+    </div>
+  </nav>
+
+  <main class="main" style="max-width:860px">
+    <div class="page-header flex justify-between items-center">
+      <div>
+        <div class="page-title">Admin <span>dashboard</span></div>
+        <div class="page-sub" id="admin-name">Loading...</div>
+      </div>
+      <div class="text-xs text-muted" id="last-refresh"></div>
+    </div>
+
+    <!-- Stats -->
+    <div class="grid-4 mb-3">
+      <div class="admin-stat"><div class="admin-stat-val text-amber" id="s-total">—</div><div class="admin-stat-lbl">Total</div></div>
+      <div class="admin-stat"><div class="admin-stat-val" style="color:var(--blue)" id="s-pending">—</div><div class="admin-stat-lbl">Pending</div></div>
+      <div class="admin-stat"><div class="admin-stat-val text-green" id="s-approved">—</div><div class="admin-stat-lbl">Approved</div></div>
+      <div class="admin-stat"><div class="admin-stat-val text-red" id="s-fake">—</div><div class="admin-stat-lbl">Fake / banned</div></div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filter-row">
+      <button class="chip active" onclick="setFilter('all', this)">All</button>
+      <button class="chip" onclick="setFilter('Pending', this)">Pending</button>
+      <button class="chip" onclick="setFilter('Approved', this)">Approved</button>
+      <button class="chip" onclick="setFilter('Fake', this)">Fake</button>
+      <button class="chip" onclick="setFilter('High', this)">High severity</button>
+    </div>
+
+    <!-- Complaints list -->
+    <div id="complaints-list">
+      <div class="empty-state">Loading complaints...</div>
+    </div>
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="config.js"></script>
+<script>
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  let allComplaints = [];
+  let currentFilter = 'all';
+  let pendingAction = null; // { complaintId, action }
+  let adminProfile = null;
+
+  async function init() {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return window.location.href = 'index.html';
+    const { data: p } = await supabase.from('users').select('*').eq('auth_id', user.id).single();
+    if (!p || p.role !== 'admin') return window.location.href = 'student.html';
+    adminProfile = p;
+    document.getElementById('admin-name').textContent = p.name;
+    loadComplaints();
+  }
+
+  async function loadComplaints() {
+    document.getElementById('last-refresh').textContent = 'Refreshed ' + new Date().toLocaleTimeString();
+    const { data } = await supabase
+      .from('complaints')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    allComplaints = data || [];
+
+    // Stats
+    document.getElementById('s-total').textContent    = allComplaints.length;
+    document.getElementById('s-pending').textContent  = allComplaints.filter(c => c.status === 'Pending').length;
+    document.getElementById('s-approved').textContent = allComplaints.filter(c => c.status === 'Approved').length;
+    document.getElementById('s-fake').textContent     = allComplaints.filter(c => c.status === 'Fake').length;
+
+    renderComplaints();
+  }
+
+  function setFilter(filter, el) {
+    currentFilter = filter;
+    document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+    renderComplaints();
+  }
+
+  function renderComplaints() {
+    let filtered = allComplaints;
+    if (currentFilter === 'High') filtered = allComplaints.filter(c => c.ai_severity === 'High');
+    else if (currentFilter !== 'all') filtered = allComplaints.filter(c => c.status === currentFilter);
+
+    const list = document.getElementById('complaints-list');
+    if (!filtered.length) {
+      list.innerHTML = `<div class="empty-state">No complaints match this filter.</div>`;
+      return;
+    }
+
+    list.innerHTML = filtered.map(c => `
+      <div class="comp-card">
+        <div class="comp-top">
+          <div>
+            <div class="comp-name">Against: ${c.accused_name}</div>
+            <div class="comp-dept">${c.accused_role} — ${c.accused_department}</div>
+          </div>
+          <div class="text-xs text-muted">${new Date(c.created_at).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}</div>
+        </div>
+        <div class="comp-meta">
+          <span class="badge badge-${c.status.toLowerCase().replace('_','-')}">${c.status.replace('_',' ')}</span>
+          ${c.ai_severity ? `<span class="badge badge-${c.ai_severity.toLowerCase()}">${c.ai_severity}</span>` : ''}
+          ${c.ai_category ? `<span class="badge badge-cat">${c.ai_category}</span>` : ''}
+        </div>
+        ${c.ai_summary ? `
+        <div class="ai-block">
+          <div class="ai-block-label">AI summary</div>
+          <div class="ai-block-text">${c.ai_summary}</div>
+        </div>` : ''}
+        <div class="comp-desc">${c.description.substring(0, 200)}${c.description.length > 200 ? '...' : ''}</div>
+        ${c.status === 'Pending' ? `
+        <div class="comp-actions">
+          <button class="btn btn-success btn-sm" onclick="openModal('${c.id}', 'approve')">✓ Approve & act</button>
+          <button class="btn btn-danger btn-sm" onclick="openModal('${c.id}', 'fake')">✗ Report fake</button>
+        </div>` : `
+        <div class="text-xs text-muted">Reviewed on ${c.reviewed_at ? new Date(c.reviewed_at).toLocaleDateString('en-IN') : 'N/A'}</div>`}
+      </div>
+    `).join('');
+  }
+
+  function openModal(complaintId, action) {
+    pendingAction = { complaintId, action };
+    const isApprove = action === 'approve';
+    document.getElementById('modal-title').textContent = isApprove ? 'Approve complaint?' : 'Report as fake?';
+    document.getElementById('modal-body').textContent = isApprove
+      ? 'This will mark the complaint as Approved and notify the complainant that action is being taken. The accused will also be notified through the platform.'
+      : 'This will mark the complaint as fake. The complainant will receive a 1-month account ban. Only do this if the complaint is clearly false or malicious.';
+    const btn = document.getElementById('modal-confirm-btn');
+    btn.textContent = isApprove ? 'Yes, approve' : 'Yes, ban user';
+    btn.className = `btn ${isApprove ? 'btn-success' : 'btn-danger'}`;
+    document.getElementById('modal').classList.add('show');
+  }
+
+  function closeModal() {
+    document.getElementById('modal').classList.remove('show');
+    pendingAction = null;
+  }
+
+  async function confirmAction() {
+    if (!pendingAction) return;
+    closeModal();
+
+    const { complaintId, action } = pendingAction;
+    const { data: { session } } = await supabase.auth.getSession();
+
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/review-complaint`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ complaintId, action }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast(action === 'approve' ? 'Complaint approved & parties notified' : 'Marked fake — 1-month ban applied', action === 'approve' ? 'success' : 'error');
+        loadComplaints();
+      } else {
+        showToast(data.error || 'Action failed', 'error');
+      }
+    } catch (e) {
+      showToast('Network error', 'error');
+    }
+  }
+
+  async function signOut() {
+    await supabase.auth.signOut();
+    window.location.href = 'index.html';
+  }
+
+  function showToast(msg, type = 'info') {
+    const t = document.createElement('div');
+    t.className = `toast ${type}`;
+    t.textContent = msg;
+    document.getElementById('toast-container').appendChild(t);
+    setTimeout(() => t.remove(), 4000);
+  }
+
+  init();
+</script>
+</body>
+</html>

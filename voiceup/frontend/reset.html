@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>VoiceUp — Reset Password</title>
+  <link rel="stylesheet" href="style.css"/>
+  <style>
+    body { display:flex; align-items:center; justify-content:center; min-height:100vh; }
+    .reset-box {
+      background: var(--navy2); border: 1px solid var(--border);
+      border-radius: 18px; padding: 40px; width: 100%; max-width: 380px;
+      position: relative; overflow: hidden;
+    }
+    .reset-box::before {
+      content:''; position:absolute; top:-60px; right:-60px; width:200px; height:200px;
+      background: radial-gradient(circle, rgba(245,166,35,.08) 0%, transparent 70%);
+      pointer-events:none;
+    }
+    .brand { display:flex; align-items:center; gap:10px; justify-content:center; margin-bottom:28px; }
+    .brand-icon { width:40px; height:40px; background:var(--amber); border-radius:10px; display:flex; align-items:center; justify-content:center; }
+    .brand-name { font-family:var(--font-head); font-size:22px; font-weight:800; }
+    .brand-name span { color:var(--amber); }
+    .step { display:none; }
+    .step.active { display:block; }
+    .step-title { font-family:var(--font-head); font-size:18px; text-align:center; margin-bottom:6px; }
+    .step-sub { font-size:12px; color:var(--muted); text-align:center; margin-bottom:24px; line-height:1.6; }
+    .success-icon { width:60px; height:60px; border-radius:50%; background:rgba(34,197,94,.1); border:1px solid rgba(34,197,94,.2); display:flex; align-items:center; justify-content:center; margin:0 auto 16px; }
+  </style>
+</head>
+<body>
+<div id="toast-container"></div>
+
+<div class="reset-box">
+  <div class="brand">
+    <div class="brand-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#07101f" stroke-width="2.5" stroke-linecap="round" width="22" height="22"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+    <div class="brand-name">Voice<span>Up</span></div>
+  </div>
+
+  <!-- Step 1: Request reset -->
+  <div class="step active" id="step-request">
+    <div class="step-title">Forgot password?</div>
+    <div class="step-sub">Enter your registered email and we'll send you a reset link.</div>
+    <div class="form-group">
+      <label class="form-label">Email address</label>
+      <input id="reset-email" type="email" class="form-control" placeholder="you@college.edu"/>
+    </div>
+    <button class="btn btn-primary btn-full" onclick="sendReset()">
+      <span id="req-text">Send reset link</span>
+      <span id="req-spin" class="spinner hidden"></span>
+    </button>
+    <div style="text-align:center;margin-top:16px;font-size:12px;color:var(--muted)">
+      Remember your password? <a href="index.html">Sign in</a>
+    </div>
+  </div>
+
+  <!-- Step 2: Email sent confirmation -->
+  <div class="step" id="step-sent">
+    <div class="success-icon">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+    </div>
+    <div class="step-title">Check your email</div>
+    <div class="step-sub">We've sent a password reset link to <strong id="sent-email" style="color:var(--text)"></strong>. Click the link in the email to set a new password.</div>
+    <div class="alert alert-warning">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <span>The link expires in 1 hour. Check your spam folder if you don't see it.</span>
+    </div>
+    <a href="index.html" class="btn btn-ghost btn-full mt-2">Back to sign in</a>
+  </div>
+
+  <!-- Step 3: New password (shown when user clicks email link — hash contains token) -->
+  <div class="step" id="step-newpass">
+    <div class="step-title">Set new password</div>
+    <div class="step-sub">Choose a strong new password for your VoiceUp account.</div>
+    <div class="form-group">
+      <label class="form-label">New password</label>
+      <input id="new-pass" type="password" class="form-control" placeholder="Min. 6 characters"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Confirm password</label>
+      <input id="confirm-pass" type="password" class="form-control" placeholder="Repeat password"/>
+    </div>
+    <button class="btn btn-primary btn-full" onclick="updatePassword()">
+      <span id="upd-text">Update password</span>
+      <span id="upd-spin" class="spinner hidden"></span>
+    </button>
+  </div>
+
+  <!-- Step 4: Success -->
+  <div class="step" id="step-done">
+    <div class="success-icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+    <div class="step-title">Password updated!</div>
+    <div class="step-sub">Your password has been changed successfully. You can now sign in with your new password.</div>
+    <a href="index.html" class="btn btn-primary btn-full">Sign in now</a>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="config.js"></script>
+<script>
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  // Check if this is a recovery link (Supabase puts #access_token in URL)
+  window.addEventListener('load', async () => {
+    const hash = window.location.hash;
+    if (hash.includes('type=recovery')) {
+      showStep('step-newpass');
+      // Supabase auto-handles the session from the hash
+      const { data, error } = await supabase.auth.getSession();
+      if (error) showToast('Invalid or expired reset link', 'error');
+    }
+  });
+
+  function showStep(id) {
+    document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  }
+
+  async function sendReset() {
+    const email = document.getElementById('reset-email').value.trim();
+    if (!email) return showToast('Please enter your email', 'error');
+
+    setLoading('req', true);
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.href,
+    });
+    setLoading('req', false);
+
+    if (error) return showToast(error.message, 'error');
+    document.getElementById('sent-email').textContent = email;
+    showStep('step-sent');
+  }
+
+  async function updatePassword() {
+    const pass    = document.getElementById('new-pass').value;
+    const confirm = document.getElementById('confirm-pass').value;
+    if (!pass || pass.length < 6) return showToast('Password must be at least 6 characters', 'error');
+    if (pass !== confirm)         return showToast('Passwords do not match', 'error');
+
+    setLoading('upd', true);
+    const { error } = await supabase.auth.updateUser({ password: pass });
+    setLoading('upd', false);
+
+    if (error) return showToast(error.message, 'error');
+    showStep('step-done');
+  }
+
+  function setLoading(prefix, on) {
+    document.getElementById(`${prefix}-text`).classList.toggle('hidden', on);
+    document.getElementById(`${prefix}-spin`).classList.toggle('hidden', !on);
+  }
+
+  function showToast(msg, type = 'info') {
+    const t = document.createElement('div');
+    t.className = `toast ${type}`;
+    t.textContent = msg;
+    document.getElementById('toast-container').appendChild(t);
+    setTimeout(() => t.remove(), 4000);
+  }
+</script>
+</body>
+</html>

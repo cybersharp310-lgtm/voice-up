@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>VoiceUp — Complaints Against Me</title>
+  <link rel="stylesheet" href="style.css"/>
+  <style>
+    .accused-banner {
+      background: rgba(239,68,68,.06); border: 1px solid rgba(239,68,68,.2);
+      border-radius: 12px; padding: 20px; margin-bottom: 20px;
+      display: flex; gap: 16px; align-items: flex-start;
+    }
+    .accused-banner-icon {
+      width: 44px; height: 44px; border-radius: 10px; flex-shrink: 0;
+      background: rgba(239,68,68,.1); display: flex; align-items: center; justify-content: center;
+    }
+    .accused-banner-title { font-size: 14px; font-weight: 500; color: var(--red); margin-bottom: 4px; }
+    .accused-banner-body  { font-size: 12px; color: var(--muted); line-height: 1.6; }
+    .complaint-item {
+      background: var(--navy2); border: 1px solid rgba(239,68,68,.15);
+      border-radius: 12px; padding: 18px; margin-bottom: 12px;
+    }
+    .complaint-item-head { display: flex; justify-content: space-between; margin-bottom: 10px; }
+    .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+    .detail-box { background: var(--navy3); border-radius: 8px; padding: 10px 12px; }
+    .detail-key { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 3px; }
+    .detail-val { font-size: 12px; font-weight: 500; }
+    .privacy-box {
+      background: rgba(59,130,246,.05); border: 1px solid rgba(59,130,246,.15);
+      border-radius: 8px; padding: 12px 14px; display: flex; gap: 8px; align-items: flex-start;
+    }
+    .privacy-text { font-size: 11px; color: #93c5fd; line-height: 1.6; }
+    .empty-clear {
+      text-align: center; padding: 60px 20px;
+    }
+    .clear-icon {
+      width: 64px; height: 64px; border-radius: 50%; margin: 0 auto 16px;
+      background: rgba(34,197,94,.1); border: 1px solid rgba(34,197,94,.2);
+      display: flex; align-items: center; justify-content: center;
+    }
+  </style>
+</head>
+<body>
+<div id="toast-container"></div>
+<div class="app-layout">
+  <nav class="sidebar">
+    <div class="sb-logo"><svg viewBox="0 0 24 24" fill="none" stroke="#07101f" stroke-width="2.5" stroke-linecap="round" width="18" height="18"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+    <a href="student.html" class="sb-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></a>
+    <a href="accused.html" class="sb-link active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></a>
+    <div class="sb-divider"></div>
+    <div class="sb-bottom">
+      <a href="notifications.html" class="sb-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></a>
+      <a class="sb-link" onclick="signOut()" style="cursor:pointer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></a>
+    </div>
+  </nav>
+
+  <main class="main">
+    <div class="page-header">
+      <div class="page-title">Complaints <span>against me</span></div>
+      <div class="page-sub">Complaints where your name appears as the accused party</div>
+    </div>
+
+    <div id="accused-content"><div style="text-align:center;padding:40px;color:var(--muted)">Loading...</div></div>
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="config.js"></script>
+<script>
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  async function init() {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return window.location.href = 'index.html';
+    const { data: p } = await supabase.from('users').select('*').eq('auth_id', user.id).single();
+    if (!p) return window.location.href = 'index.html';
+
+    // Find complaints where accused_name matches this user's name (fuzzy)
+    const { data: complaints } = await supabase
+      .from('complaints')
+      .select('id, accused_name, accused_department, accused_role, incident_date, ai_category, ai_severity, status, created_at')
+      .ilike('accused_name', `%${p.name.split(' ')[0]}%`)
+      .order('created_at', { ascending: false });
+
+    const content = document.getElementById('accused-content');
+
+    if (!complaints || complaints.length === 0) {
+      content.innerHTML = `
+        <div class="empty-clear">
+          <div class="clear-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <div style="font-size:15px;font-weight:500;margin-bottom:8px">You're in the clear!</div>
+          <div class="text-sm text-muted">No complaints have been filed against you on this platform.</div>
+        </div>`;
+      return;
+    }
+
+    content.innerHTML = `
+      <div class="accused-banner">
+        <div class="accused-banner-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        </div>
+        <div>
+          <div class="accused-banner-title">${complaints.length} complaint${complaints.length > 1 ? 's' : ''} filed against you</div>
+          <div class="accused-banner-body">These complaints are under review by the authority. The complainant's identity is completely anonymous — their name and contact details are hidden from you. All matters are handled through official channels only.</div>
+        </div>
+      </div>
+
+      <div class="privacy-box mb-3">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#93c5fd" stroke-width="2" style="flex-shrink:0;margin-top:1px"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        <div class="privacy-text">Your personal phone number and contact information have NOT been shared with the complainant. All communication happens through VoiceUp only.</div>
+      </div>
+
+      ${complaints.map(c => `
+      <div class="complaint-item">
+        <div class="complaint-item-head">
+          <div style="font-size:13px;font-weight:500">Complaint #${c.id.split('-')[0].toUpperCase()}</div>
+          <span class="badge badge-${c.status.toLowerCase().replace('_','-')}">${c.status.replace('_',' ')}</span>
+        </div>
+        <div class="detail-grid">
+          <div class="detail-box"><div class="detail-key">Category</div><div class="detail-val">${c.ai_category || 'Under analysis'}</div></div>
+          <div class="detail-box"><div class="detail-key">Severity</div><div class="detail-val ${c.ai_severity === 'High' ? 'text-red' : c.ai_severity === 'Medium' ? 'text-amber' : 'text-green'}">${c.ai_severity || '—'}</div></div>
+          <div class="detail-box"><div class="detail-key">Incident date</div><div class="detail-val">${new Date(c.incident_date).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}</div></div>
+          <div class="detail-box"><div class="detail-key">Filed on</div><div class="detail-val">${new Date(c.created_at).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}</div></div>
+        </div>
+        <div class="text-xs text-muted">Complainant identity: <strong style="color:var(--muted)">Anonymous — not disclosed</strong></div>
+      </div>`).join('')}`;
+  }
+
+  async function signOut() { await supabase.auth.signOut(); window.location.href = 'index.html'; }
+  init();
+</script>
+</body>
+</html>

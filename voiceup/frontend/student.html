@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>VoiceUp — My Dashboard</title>
+  <link rel="stylesheet" href="style.css"/>
+  <style>
+    .stat-card { background: var(--navy2); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+    .stat-val { font-family: var(--font-head); font-size: 28px; font-weight: 800; }
+    .stat-lbl { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .limit-bar-track { height: 5px; background: var(--border); border-radius: 3px; margin-top: 8px; overflow: hidden; }
+    .limit-bar-fill  { height: 100%; border-radius: 3px; transition: width .4s; }
+    .c-item {
+      background: var(--navy2); border: 1px solid var(--border); border-radius: 10px;
+      padding: 16px; margin-bottom: 10px; cursor: pointer; transition: border-color .15s;
+    }
+    .c-item:hover { border-color: var(--navy4); }
+    .c-item-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 6px; }
+    .c-item-title { font-size: 13px; font-weight: 500; flex: 1; }
+    .c-meta { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 6px; }
+    .c-summary { font-size: 11px; color: var(--muted); line-height: 1.5; }
+    .c-date { font-size: 10px; color: var(--muted); margin-top: 8px; }
+    .empty-state { text-align: center; padding: 48px 20px; color: var(--muted); }
+    .empty-state svg { width: 40px; height: 40px; margin-bottom: 12px; opacity: .3; }
+    .notif-dot {
+      width: 7px; height: 7px; background: var(--red); border-radius: 50%;
+      position: absolute; top: 4px; right: 4px;
+    }
+    .sb-link { position: relative; }
+  </style>
+</head>
+<body>
+<div id="toast-container"></div>
+
+<div class="app-layout">
+  <!-- Sidebar -->
+  <nav class="sidebar">
+    <div class="sb-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#07101f" stroke-width="2.5" stroke-linecap="round" width="18" height="18">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+      </svg>
+    </div>
+    <a href="student.html" class="sb-link active" title="Dashboard">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+    </a>
+    <a href="form.html" class="sb-link" title="New complaint">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+    </a>
+    <a href="status.html" class="sb-link" title="Complaint status">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+    </a>
+    <div class="sb-divider"></div>
+    <div class="sb-bottom">
+      <a class="sb-link" id="notif-btn" href="notifications.html" title="Notifications">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      </a>
+      <a class="sb-link" onclick="signOut()" title="Sign out" style="cursor:pointer">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      </a>
+    </div>
+  </nav>
+
+  <!-- Main content -->
+  <main class="main">
+    <div class="page-header flex justify-between items-center">
+      <div>
+        <div class="page-title">Hello, <span id="user-name">...</span> 👋</div>
+        <div class="page-sub" id="user-dept">Loading profile...</div>
+      </div>
+      <a href="form.html" class="btn btn-primary btn-sm">+ New complaint</a>
+    </div>
+
+    <!-- Ban alert -->
+    <div id="ban-alert" class="alert alert-danger hidden">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+      <span id="ban-msg">Your account is currently restricted.</span>
+    </div>
+
+    <!-- Stats -->
+    <div class="grid-3 mb-3">
+      <div class="stat-card">
+        <div class="stat-val text-amber" id="stat-total">—</div>
+        <div class="stat-lbl">Total filed</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val text-green" id="stat-approved">—</div>
+        <div class="stat-lbl">Approved</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val" id="stat-pending">—</div>
+        <div class="stat-lbl">Pending</div>
+      </div>
+    </div>
+
+    <!-- Daily limit bar -->
+    <div class="card mb-3 flex gap-3 items-center">
+      <div style="flex:1">
+        <div class="flex justify-between items-center">
+          <div style="font-size:12px;font-weight:500">Daily complaint limit</div>
+          <div id="limit-label" class="text-xs text-muted">Checking...</div>
+        </div>
+        <div class="text-xs text-muted mt-1">1 complaint allowed per day — resets at midnight</div>
+        <div class="limit-bar-track">
+          <div id="limit-bar" class="limit-bar-fill" style="width:0%;background:var(--green)"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Complaints list -->
+    <div class="text-xs text-muted mb-2" style="text-transform:uppercase;letter-spacing:.06em;font-weight:500">My complaints</div>
+    <div id="complaints-list">
+      <div class="empty-state">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <div>Loading your complaints...</div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="config.js"></script>
+<script>
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  let profile = null;
+
+  async function init() {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return window.location.href = 'index.html';
+
+    const { data: p } = await supabase.from('users').select('*').eq('auth_id', user.id).single();
+    if (!p) return window.location.href = 'index.html';
+    if (p.role === 'admin') return window.location.href = 'admin.html';
+    profile = p;
+
+    document.getElementById('user-name').textContent = p.name.split(' ')[0];
+    document.getElementById('user-dept').textContent = `${p.department || ''} — Roll: ${p.roll_number || 'N/A'}`;
+
+    // Ban check
+    if (p.is_banned && new Date(p.ban_expiry) > new Date()) {
+      const el = document.getElementById('ban-alert');
+      el.classList.remove('hidden');
+      document.getElementById('ban-msg').textContent =
+        `Your account is restricted until ${new Date(p.ban_expiry).toDateString()} for filing a false complaint.`;
+    }
+
+    // Daily limit
+    const today = new Date().toISOString().split('T')[0];
+    const used = p.last_complaint_date === today;
+    document.getElementById('limit-bar').style.width = used ? '100%' : '0%';
+    document.getElementById('limit-bar').style.background = used ? 'var(--red)' : 'var(--green)';
+    document.getElementById('limit-label').textContent = used ? 'Used today' : 'Available today';
+    document.getElementById('limit-label').style.color = used ? 'var(--red)' : 'var(--green)';
+
+    // Load complaints
+    const { data: complaints } = await supabase
+      .from('complaints')
+      .select('*')
+      .eq('complainant_id', p.id)
+      .order('created_at', { ascending: false });
+
+    // Stats
+    document.getElementById('stat-total').textContent    = complaints?.length || 0;
+    document.getElementById('stat-approved').textContent = complaints?.filter(c => c.status === 'Approved').length || 0;
+    document.getElementById('stat-pending').textContent  = complaints?.filter(c => c.status === 'Pending').length || 0;
+
+    // Render list
+    const list = document.getElementById('complaints-list');
+    if (!complaints || complaints.length === 0) {
+      list.innerHTML = `<div class="empty-state">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="40" height="40"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <div>No complaints filed yet.</div>
+        <a href="form.html" class="btn btn-primary btn-sm mt-2" style="display:inline-flex">+ File your first complaint</a>
+      </div>`;
+      return;
+    }
+
+    list.innerHTML = complaints.map(c => `
+      <div class="c-item" onclick="window.location.href='status.html'">
+        <div class="c-item-top">
+          <div class="c-item-title">Against: ${c.accused_name}</div>
+          <span class="badge badge-${c.status.toLowerCase().replace('_','-')}">${c.status.replace('_',' ')}</span>
+        </div>
+        <div class="c-meta">
+          ${c.ai_severity ? `<span class="badge badge-${c.ai_severity.toLowerCase()}">${c.ai_severity}</span>` : ''}
+          ${c.ai_category ? `<span class="badge badge-cat">${c.ai_category}</span>` : ''}
+          <span class="text-xs text-muted">${c.accused_department}</span>
+        </div>
+        ${c.ai_summary ? `<div class="c-summary">${c.ai_summary}</div>` : ''}
+        ${c.ai_rejection_reason ? `<div class="c-summary text-red">AI rejected: ${c.ai_rejection_reason}</div>` : ''}
+        <div class="c-date">${new Date(c.created_at).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' })}</div>
+      </div>
+    `).join('');
+
+    // Unread notifications dot
+    const { count } = await supabase.from('notifications')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', p.id).eq('is_read', false);
+    if (count > 0) {
+      const dot = document.createElement('div');
+      dot.className = 'notif-dot';
+      document.getElementById('notif-btn').appendChild(dot);
+    }
+  }
+
+  async function signOut() {
+    await supabase.auth.signOut();
+    window.location.href = 'index.html';
+  }
+
+  function showToast(msg, type = 'info') {
+    const t = document.createElement('div');
+    t.className = `toast ${type}`;
+    t.textContent = msg;
+    document.getElementById('toast-container').appendChild(t);
+    setTimeout(() => t.remove(), 3500);
+  }
+
+  init();
+</script>
+</body>
+</html>
