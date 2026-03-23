@@ -98,7 +98,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="config.js"></script>
 <script>
-  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const sb =  window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   // Check if this is a recovery link (Supabase puts #access_token in URL)
   window.addEventListener('load', async () => {
@@ -106,7 +106,7 @@
     if (hash.includes('type=recovery')) {
       showStep('step-newpass');
       // Supabase auto-handles the session from the hash
-      const { data, error } = await supabase.auth.getSession();
+      const { data, error } = await sb.auth.getSession();
       if (error) showToast('Invalid or expired reset link', 'error');
     }
   });
@@ -121,7 +121,7 @@
     if (!email) return showToast('Please enter your email', 'error');
 
     setLoading('req', true);
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    const { error } = await sb.auth.resetPasswordForEmail(email, {
       redirectTo: window.location.href,
     });
     setLoading('req', false);
@@ -138,7 +138,7 @@
     if (pass !== confirm)         return showToast('Passwords do not match', 'error');
 
     setLoading('upd', true);
-    const { error } = await supabase.auth.updateUser({ password: pass });
+    const { error } = await sb.auth.updateUser({ password: pass });
     setLoading('upd', false);
 
     if (error) return showToast(error.message, 'error');
