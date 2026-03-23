@@ -143,14 +143,14 @@
   let selectedRole = 'student';
 
   // Redirect if already logged in
-  supabase.auth.getSession().then(({ data: { session } }) => {
+  sb.auth.getSession().then(({ data: { session } }) => {
     if (session) redirectByRole();
   });
 
   async function redirectByRole() {
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user } } = await sb.auth.getUser();
     if (!user) return;
-    const { data: profile } = await supabase.from('users').select('role').eq('auth_id', user.id).single();
+    const { data: profile } = await sb.from('users').select('role').eq('auth_id', user.id).single();
     if (profile?.role === 'admin') window.location.href = 'admin.html';
     else window.location.href = 'student.html';
   }
@@ -173,7 +173,7 @@
     if (!email || !password) return showToast('Please fill in all fields', 'error');
 
     setLoading('login', true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await sb.auth.signInWithPassword({ email, password });
     setLoading('login', false);
 
     if (error) return showToast(error.message, 'error');
@@ -192,11 +192,11 @@
     if (password.length < 6) return showToast('Password must be at least 6 characters', 'error');
 
     setLoading('reg', true);
-    const { data, error } = await supabase.auth.signUp({ email, password });
+    const { data, error } = await sb.auth.signUp({ email, password });
     if (error) { setLoading('reg', false); return showToast(error.message, 'error'); }
 
     // Create user profile
-    const { error: profileError } = await supabase.from('users').insert({
+    const { error: profileError } = await sb.from('users').insert({
       auth_id: data.user.id,
       name, email,
       roll_number: roll || null,
