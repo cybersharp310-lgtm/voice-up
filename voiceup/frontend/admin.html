@@ -202,9 +202,13 @@
 
   async function confirmAction() {
     if (!pendingAction) return;
+
+    // 1. Extract the data FIRST
+    const { complaintId, action } = pendingAction;
+    
+    // 2. THEN close the modal
     closeModal();
 
-    const { complaintId, action } = pendingAction;
     const { data: { session } } = await sb.auth.getSession();
 
     try {
