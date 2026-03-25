@@ -28,10 +28,58 @@
       position: absolute; top: 4px; right: 4px;
     }
     .sb-link { position: relative; }
+    
+    /* Edit Profile Modal Styles */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,.6);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 100; display: none;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal-box {
+      background: var(--navy2); border: 1px solid var(--border);
+      border-radius: 14px; padding: 28px; width: 90%; max-width: 400px;
+    }
+    .modal-title { font-family: var(--font-head); font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+    .modal-sub { font-size: 12px; color: var(--muted); margin-bottom: 20px; line-height: 1.6; }
   </style>
 </head>
 <body>
 <div id="toast-container"></div>
+
+<div class="modal-overlay" id="profile-modal">
+  <div class="modal-box">
+    <div class="modal-title">Edit Profile</div>
+    <div class="modal-sub">Update your personal information below.</div>
+    
+    <div class="form-group mb-2">
+      <label class="form-label">Full Name</label>
+      <input type="text" id="edit-name" class="form-control" placeholder="Your full name">
+    </div>
+    <div class="form-group mb-2">
+      <label class="form-label">Roll Number</label>
+      <input type="text" id="edit-roll" class="form-control" placeholder="e.g. BCA2023001">
+    </div>
+    <div class="form-group mb-3">
+      <label class="form-label">Department</label>
+      <select id="edit-dept" class="form-control">
+        <option>Computer Science</option>
+        <option>Mathematics</option>
+        <option>Physics</option>
+        <option>Administration</option>
+        <option>Other</option>
+      </select>
+    </div>
+    
+    <div class="flex gap-2">
+      <button class="btn btn-ghost" onclick="closeProfileModal()">Cancel</button>
+      <button class="btn btn-primary" id="save-profile-btn" onclick="saveProfile()">
+        <span id="save-text">Save Changes</span>
+        <span id="save-spin" class="spinner hidden"></span>
+      </button>
+    </div>
+  </div>
+</div>
 
 <div class="app-layout">
   <nav class="sidebar">
@@ -66,7 +114,10 @@
         <div class="page-title">Hello, <span id="user-name">...</span> 👋</div>
         <div class="page-sub" id="user-dept">Loading profile...</div>
       </div>
-      <a href="form.html" class="btn btn-primary btn-sm">+ New complaint</a>
+      <div class="flex gap-2">
+        <button class="btn btn-ghost btn-sm" onclick="openProfileModal()">Edit Profile</button>
+        <a href="form.html" class="btn btn-primary btn-sm">+ New complaint</a>
+      </div>
     </div>
 
     <div id="ban-alert" class="alert alert-danger hidden">
@@ -127,8 +178,7 @@
     if (p.role === 'admin') return window.location.href = 'admin.html';
     profile = p;
 
-    document.getElementById('user-name').textContent = p.name.split(' ')[0];
-    document.getElementById('user-dept').textContent = `${p.department || ''} — Roll: ${p.roll_number || 'N/A'}`;
+    updateProfileUI();
 
     // Ban check
     if (p.is_banned && new Date(p.ban_expiry) > new Date()) {
@@ -195,6 +245,79 @@
       dot.className = 'notif-dot';
       document.getElementById('notif-btn').appendChild(dot);
     }
+  }
+
+  // --- Profile Editing Functions ---
+  
+  function updateProfileUI() {
+    document.getElementById('user-name').textContent = profile.name.split(' ')[0];
+    document.getElementById('user-dept').textContent = `${profile.department || ''} — Roll: ${profile.roll_number || 'N/A'}`;
+  }
+
+  function openProfileModal() {
+    document.getElementById('edit-name').value = profile.name || '';
+    document.getElementById('edit-roll').value = profile.roll_number || '';
+    
+    // Select the correct department in the dropdown
+    const deptSelect = document.getElementById('edit-dept');
+    const deptValue = profile.department || '';
+    let found = false;
+    for (let i = 0; i < deptSelect.options.length; i++) {
+      if (deptSelect.options[i].value === deptValue) {
+        deptSelect.selectedIndex = i;
+        found = true;
+        break;
+      }
+    }
+    if (!found) deptSelect.value = 'Other';
+
+    document.getElementById('profile-modal').classList.add('show');
+  }
+
+  function closeProfileModal() {
+    document.getElementById('profile-modal').classList.remove('show');
+  }
+
+  async function saveProfile() {
+    const name = document.getElementById('edit-name').value.trim();
+    const roll = document.getElementById('edit-roll').value.trim();
+    const dept = document.getElementById('edit-dept').value;
+
+    if (!name || !dept) {
+      return showToast('Name and Department are required', 'error');
+    }
+
+    // UI Loading state
+    const btnText = document.getElementById('save-text');
+    const btnSpin = document.getElementById('save-spin');
+    document.getElementById('save-profile-btn').disabled = true;
+    btnText.classList.add('hidden');
+    btnSpin.classList.remove('hidden');
+
+    // Update in Supabase
+    const { error } = await sb.from('users').update({
+      name: name,
+      roll_number: roll,
+      department: dept
+    }).eq('id', profile.id);
+
+    // Reset UI state
+    document.getElementById('save-profile-btn').disabled = false;
+    btnText.classList.remove('hidden');
+    btnSpin.classList.add('hidden');
+
+    if (error) {
+      return showToast(error.message, 'error');
+    }
+
+    // Update local profile object and dashboard text
+    profile.name = name;
+    profile.roll_number = roll;
+    profile.department = dept;
+    
+    updateProfileUI();
+    closeProfileModal();
+    showToast('Profile updated successfully!', 'success');
   }
 
   async function signOut() {
