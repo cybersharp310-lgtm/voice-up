@@ -77,7 +77,7 @@
     if (!p) return window.location.href = 'index.html';
 
     // Find complaints where accused_name matches this user's name (fuzzy)
-    const { data: complaints } = await supabase
+    const { data: complaints } = await sb
       .from('complaints')
       .select('id, accused_name, accused_department, accused_role, incident_date, ai_category, ai_severity, status, created_at')
       .ilike('accused_name', `%${p.name.split(' ')[0]}%`)
