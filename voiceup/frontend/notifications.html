@@ -74,7 +74,7 @@
   }
 
   async function loadNotifs() {
-    const { data } = await supabase
+    const { data } = await sb
       .from('notifications').select('*')
       .eq('user_id', userId)
       .order('created_at', { ascending: false });
