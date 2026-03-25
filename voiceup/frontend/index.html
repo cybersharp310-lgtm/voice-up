@@ -6,222 +6,166 @@
   <title>VoiceUp — Login</title>
   <link rel="stylesheet" href="style.css"/>
   <style>
-    body { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
-    .login-box {
-      background: var(--navy2); border: 1px solid var(--border);
-      border-radius: 18px; padding: 40px; width: 100%; max-width: 400px;
-      position: relative; overflow: hidden;
-    }
-    .login-box::before {
-      content: ''; position: absolute; top: -80px; right: -80px;
-      width: 240px; height: 240px;
-      background: radial-gradient(circle, rgba(245,166,35,.1) 0%, transparent 70%);
-      pointer-events: none;
-    }
-    .brand { display: flex; align-items: center; gap: 10px; justify-content: center; margin-bottom: 28px; }
-    .brand-icon {
-      width: 40px; height: 40px; background: var(--amber); border-radius: 10px;
-      display: flex; align-items: center; justify-content: center;
-    }
-    .brand-icon svg { width: 22px; height: 22px; }
-    .brand-name { font-family: var(--font-head); font-size: 22px; font-weight: 800; }
-    .brand-name span { color: var(--amber); }
-    .login-title { font-family: var(--font-head); font-size: 20px; text-align: center; margin-bottom: 4px; }
-    .login-sub { font-size: 12px; color: var(--muted); text-align: center; margin-bottom: 24px; }
-    .tab-row { display: flex; background: var(--navy3); border-radius: 8px; padding: 3px; margin-bottom: 20px; gap: 3px; }
-    .tab-btn {
-      flex: 1; padding: 8px; border: none; background: transparent; color: var(--muted);
-      border-radius: 6px; cursor: pointer; font-family: var(--font-body);
-      font-size: 12px; font-weight: 500; transition: all .15s;
-    }
-    .tab-btn.active { background: var(--navy2); color: var(--text); box-shadow: 0 1px 4px rgba(0,0,0,.3); }
-    .role-row { display: flex; gap: 8px; margin-bottom: 16px; }
-    .role-btn {
-      flex: 1; padding: 9px; border: 1px solid var(--border); border-radius: 8px;
-      background: var(--navy3); color: var(--muted); font-size: 12px;
-      cursor: pointer; text-align: center; transition: all .15s; font-family: var(--font-body);
-    }
-    .role-btn.active { border-color: var(--amber); color: var(--amber); background: rgba(245,166,35,.08); }
-    .divider { height: 1px; background: var(--border); margin: 16px 0; }
-    .switch-text { text-align: center; font-size: 12px; color: var(--muted); margin-top: 16px; }
-    .switch-text a { color: var(--amber); }
-    #register-section { display: none; }
+    body{display:flex;align-items:center;justify-content:center;min-height:100vh}
+    .login-box{background:var(--navy2);border:1px solid var(--border);border-radius:18px;padding:40px;width:100%;max-width:400px;position:relative;overflow:hidden}
+    .login-box::before{content:'';position:absolute;top:-80px;right:-80px;width:240px;height:240px;background:radial-gradient(circle,rgba(245,166,35,.1) 0%,transparent 70%);pointer-events:none}
+    .brand{display:flex;align-items:center;gap:10px;justify-content:center;margin-bottom:28px}
+    .brand-icon{width:40px;height:40px;background:var(--amber);border-radius:10px;display:flex;align-items:center;justify-content:center}
+    .brand-name{font-family:var(--font-head);font-size:22px;font-weight:800}
+    .brand-name span{color:var(--amber)}
+    .login-title{font-family:var(--font-head);font-size:20px;text-align:center;margin-bottom:4px}
+    .login-sub{font-size:12px;color:var(--muted);text-align:center;margin-bottom:24px}
+    .tab-row{display:flex;background:var(--navy3);border-radius:8px;padding:3px;margin-bottom:20px;gap:3px}
+    .tab-btn{flex:1;padding:8px;border:none;background:transparent;color:var(--muted);border-radius:6px;cursor:pointer;font-family:var(--font-body);font-size:12px;font-weight:500;transition:all .15s}
+    .tab-btn.active{background:var(--navy2);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.3)}
+    .role-row{display:flex;gap:8px;margin-bottom:16px}
+    .role-btn{flex:1;padding:9px;border:1px solid var(--border);border-radius:8px;background:var(--navy3);color:var(--muted);font-size:12px;cursor:pointer;text-align:center;transition:all .15s;font-family:var(--font-body)}
+    .role-btn.active{border-color:var(--amber);color:var(--amber);background:rgba(245,166,35,.08)}
+    #register-section{display:none}
   </style>
 </head>
 <body>
 <div id="toast-container"></div>
-
 <div class="login-box">
   <div class="brand">
-    <div class="brand-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke="#07101f" stroke-width="2.5" stroke-linecap="round">
-        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-      </svg>
-    </div>
+    <div class="brand-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#07101f" stroke-width="2.5" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
     <div class="brand-name">Voice<span>Up</span></div>
   </div>
-
-  <!-- Login / Register tabs -->
   <div class="tab-row">
     <button class="tab-btn active" onclick="switchTab('login')">Sign in</button>
     <button class="tab-btn" onclick="switchTab('register')">Register</button>
   </div>
-
-  <!-- LOGIN SECTION -->
   <div id="login-section">
     <div class="login-title">Welcome back</div>
     <div class="login-sub">Sign in to the complaint portal</div>
-
-    <div class="form-group">
-      <label class="form-label">Email</label>
-      <input id="login-email" type="email" class="form-control" placeholder="you@college.edu"/>
-    </div>
-    <div class="form-group">
-      <label class="form-label">Password</label>
-      <input id="login-password" type="password" class="form-control" placeholder="••••••••"/>
-    </div>
-    <button class="btn btn-primary btn-full" onclick="handleLogin()">
-      <span id="login-text">Sign in</span>
-      <span id="login-spin" class="spinner hidden"></span>
-    </button>
+    <div class="form-group"><label class="form-label">Email</label><input id="login-email" type="email" class="form-control" placeholder="you@college.edu"/></div>
+    <div class="form-group"><label class="form-label">Password</label><input id="login-password" type="password" class="form-control" placeholder="••••••••"/></div>
+    <button class="btn btn-primary btn-full" onclick="handleLogin()"><span id="login-text">Sign in</span><span id="login-spin" class="spinner hidden"></span></button>
+    <div style="text-align:center;margin-top:12px;font-size:12px;color:var(--muted)"><a href="reset.html" style="color:var(--amber)">Forgot password?</a></div>
   </div>
-
-  <!-- REGISTER SECTION -->
   <div id="register-section">
     <div class="login-title">Create account</div>
     <div class="login-sub">Join the VoiceUp platform</div>
-
-    <div class="form-group">
-      <label class="form-label">Sign up as</label>
-      <div class="role-row">
-        <div class="role-btn active" onclick="selectRole('student', this)">Student</div>
-        <div class="role-btn" onclick="selectRole('admin', this)">Admin</div>
-      </div>
+    <div class="form-group"><label class="form-label">Sign up as</label>
+      <div class="role-row"><div class="role-btn active" onclick="selectRole('student',this)">Student</div><div class="role-btn" onclick="selectRole('admin',this)">Admin</div></div>
     </div>
-
     <div class="grid-2">
-      <div class="form-group mb-1">
-        <label class="form-label">Full name</label>
-        <input id="reg-name" type="text" class="form-control" placeholder="Your name"/>
-      </div>
-      <div class="form-group mb-1">
-        <label class="form-label">Roll number</label>
-        <input id="reg-roll" type="text" class="form-control" placeholder="BCA2023001"/>
-      </div>
+      <div class="form-group mb-1"><label class="form-label">Full name</label><input id="reg-name" type="text" class="form-control" placeholder="Your name"/></div>
+      <div class="form-group mb-1"><label class="form-label">Roll number</label><input id="reg-roll" type="text" class="form-control" placeholder="BCA2023001"/></div>
     </div>
-    <div class="form-group">
-      <label class="form-label">Email</label>
-      <input id="reg-email" type="email" class="form-control" placeholder="you@college.edu"/>
+    <div class="form-group"><label class="form-label">Email</label><input id="reg-email" type="email" class="form-control" placeholder="you@college.edu"/></div>
+    <div class="form-group"><label class="form-label">Department</label>
+      <select id="reg-dept" class="form-control"><option value="">Select department</option><option>Computer Science</option><option>Mathematics</option><option>Physics</option><option>Administration</option><option>Other</option></select>
     </div>
-    <div class="form-group">
-      <label class="form-label">Department</label>
-      <select id="reg-dept" class="form-control">
-        <option value="">Select department</option>
-        <option>Computer Science</option>
-        <option>Mathematics</option>
-        <option>Physics</option>
-        <option>Administration</option>
-        <option>Other</option>
-      </select>
-    </div>
-    <div class="form-group">
-      <label class="form-label">Password</label>
-      <input id="reg-password" type="password" class="form-control" placeholder="Min. 6 characters"/>
-    </div>
-    <button class="btn btn-primary btn-full" onclick="handleRegister()">
-      <span id="reg-text">Create account</span>
-      <span id="reg-spin" class="spinner hidden"></span>
-    </button>
+    <div class="form-group"><label class="form-label">Password</label><input id="reg-password" type="password" class="form-control" placeholder="Min. 6 characters"/></div>
+    <button class="btn btn-primary btn-full" onclick="handleRegister()"><span id="reg-text">Create account</span><span id="reg-spin" class="spinner hidden"></span></button>
   </div>
 </div>
 
-<!-- Supabase JS -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="config.js"></script>
 <script>
-  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  let selectedRole = 'student';
+// Persistent session - user stays logged in even after closing browser
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, storageKey: 'voiceup-session' }
+});
 
-  // Redirect if already logged in
-  sb.auth.getSession().then(({ data: { session } }) => {
-    if (session) redirectByRole();
-  });
+let selectedRole = 'student';
+let redirecting  = false;
 
-  async function redirectByRole() {
-    const { data: { user } } = await sb.auth.getUser();
-    if (!user) return;
-    const { data: profile } = await sb.from('users').select('role').eq('auth_id', user.id).single();
-    if (profile?.role === 'admin') window.location.href = 'admin.html';
-    else window.location.href = 'student.html';
+// Auto-redirect if session already exists (cookie/localStorage)
+sb.auth.getSession().then(({ data: { session } }) => {
+  if (session && !redirecting) { redirecting = true; redirectByRole(session.user); }
+});
+
+async function redirectByRole(user) {
+  try {
+    // maybeSingle() returns null instead of 404 error when row missing
+    const { data: profile, error } = await sb.from('users').select('role').eq('auth_id', user.id).maybeSingle();
+    if (error) throw error;
+    if (!profile) {
+      // Profile missing - create it silently then redirect
+      await sb.from('users').upsert({ auth_id: user.id, name: user.email.split('@')[0], email: user.email, role: 'student' }, { onConflict: 'auth_id' });
+      window.location.href = 'student.html';
+      return;
+    }
+    window.location.href = profile.role === 'admin' ? 'admin.html' : 'student.html';
+  } catch(err) {
+    console.error(err);
+    redirecting = false;
+    showToast('Profile fetch failed. Try again.', 'error');
   }
+}
 
-  function switchTab(tab) {
-    document.querySelectorAll('.tab-btn').forEach((b, i) => b.classList.toggle('active', (tab === 'login') === (i === 0)));
-    document.getElementById('login-section').style.display   = tab === 'login'    ? 'block' : 'none';
-    document.getElementById('register-section').style.display = tab === 'register' ? 'block' : 'none';
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active',(tab==='login')===(i===0)));
+  document.getElementById('login-section').style.display    = tab==='login'    ? 'block' : 'none';
+  document.getElementById('register-section').style.display = tab==='register' ? 'block' : 'none';
+}
+
+function selectRole(role, el) {
+  selectedRole = role;
+  document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+}
+
+async function handleLogin() {
+  const email    = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  if (!email || !password) return showToast('Please fill in all fields', 'error');
+  setLoading('login', true);
+  const { data, error } = await sb.auth.signInWithPassword({ email, password });
+  setLoading('login', false);
+  if (error) {
+    if (error.message.includes('Invalid login')) return showToast('Wrong email or password', 'error');
+    if (error.message.includes('Email not confirmed')) return showToast('Check email and click confirm link', 'error');
+    return showToast(error.message, 'error');
   }
+  showToast('Signed in! Redirecting...', 'success');
+  redirecting = true;
+  redirectByRole(data.user);
+}
 
-  function selectRole(role, el) {
-    selectedRole = role;
-    document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
-    el.classList.add('active');
-  }
-
-  async function handleLogin() {
-    const email    = document.getElementById('login-email').value.trim();
-    const password = document.getElementById('login-password').value;
-    if (!email || !password) return showToast('Please fill in all fields', 'error');
-
-    setLoading('login', true);
-    const { error } = await sb.auth.signInWithPassword({ email, password });
-    setLoading('login', false);
-
-    if (error) return showToast(error.message, 'error');
-    showToast('Signed in! Redirecting...', 'success');
-    setTimeout(redirectByRole, 800);
-  }
-
-  async function handleRegister() {
-    const name     = document.getElementById('reg-name').value.trim();
-    const roll     = document.getElementById('reg-roll').value.trim();
-    const email    = document.getElementById('reg-email').value.trim();
-    const dept     = document.getElementById('reg-dept').value;
-    const password = document.getElementById('reg-password').value;
-
-    if (!name || !email || !password || !dept) return showToast('Please fill all fields', 'error');
-    if (password.length < 6) return showToast('Password must be at least 6 characters', 'error');
-
-    setLoading('reg', true);
-    const { data, error } = await sb.auth.signUp({ email, password });
-    if (error) { setLoading('reg', false); return showToast(error.message, 'error'); }
-
-    // Create user profile
-    const { error: profileError } = await sb.from('users').insert({
-      auth_id: data.user.id,
-      name, email,
-      roll_number: roll || null,
-      department: dept,
-      role: selectedRole,
-    });
-
+async function handleRegister() {
+  const name     = document.getElementById('reg-name').value.trim();
+  const roll     = document.getElementById('reg-roll').value.trim();
+  const email    = document.getElementById('reg-email').value.trim();
+  const dept     = document.getElementById('reg-dept').value;
+  const password = document.getElementById('reg-password').value;
+  if (!name || !email || !password || !dept) return showToast('Please fill all fields', 'error');
+  if (password.length < 6) return showToast('Password must be at least 6 characters', 'error');
+  setLoading('reg', true);
+  const { data, error } = await sb.auth.signUp({ email, password });
+  if (error) {
     setLoading('reg', false);
-    if (profileError) return showToast('Account created but profile setup failed. Contact admin.', 'error');
-    showToast('Account created! Redirecting...', 'success');
-    setTimeout(redirectByRole, 800);
+    if (error.message.includes('already registered')) return showToast('Email already exists. Try signing in.', 'error');
+    return showToast(error.message, 'error');
   }
+  // upsert avoids 409 conflict if profile row already exists
+  await sb.from('users').upsert({
+    auth_id: data.user.id, name, email,
+    roll_number: roll || null, department: dept, role: selectedRole
+  }, { onConflict: 'auth_id' });
+  setLoading('reg', false);
+  showToast('Account created! Signing you in...', 'success');
+  // Auto sign in immediately after register
+  setTimeout(async () => {
+    const { data: d2, error: e2 } = await sb.auth.signInWithPassword({ email, password });
+    if (!e2 && d2.user) { redirecting = true; redirectByRole(d2.user); }
+  }, 800);
+}
 
-  function setLoading(prefix, on) {
-    document.getElementById(`${prefix}-text`).classList.toggle('hidden', on);
-    document.getElementById(`${prefix}-spin`).classList.toggle('hidden', !on);
-  }
+function setLoading(prefix, on) {
+  document.getElementById(prefix+'-text').classList.toggle('hidden', on);
+  document.getElementById(prefix+'-spin').classList.toggle('hidden', !on);
+}
 
-  function showToast(msg, type = 'info') {
-    const t = document.createElement('div');
-    t.className = `toast ${type}`;
-    t.textContent = msg;
-    document.getElementById('toast-container').appendChild(t);
-    setTimeout(() => t.remove(), 3500);
-  }
+function showToast(msg, type='info') {
+  const t = document.createElement('div');
+  t.className = 'toast '+type; t.textContent = msg;
+  document.getElementById('toast-container').appendChild(t);
+  setTimeout(() => t.remove(), 4000);
+}
 </script>
 </body>
 </html>
