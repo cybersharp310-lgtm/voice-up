@@ -1,7 +1,5 @@
 // ============================================
 // VoiceUp — config.js
-// Replace these values with your own from
-// Supabase Dashboard > Settings > API
 // ============================================
 
 const SUPABASE_URL      = "https://yxgmtqpsumzwuacrdmbc.supabase.co";
