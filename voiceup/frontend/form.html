@@ -49,13 +49,11 @@
       <div class="page-sub">Your identity is never revealed. AI will analyze it before it reaches admin.</div>
     </div>
 
-    <!-- AI notice -->
     <div class="alert alert-warning mb-3">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
       <span>Your complaint is instantly analyzed by AI (Groq / Llama 3.1). Gibberish or fake complaints are auto-rejected and may result in a ban.</span>
     </div>
 
-    <!-- Form -->
     <div class="form-card" id="form-section">
       <div class="grid-2">
         <div class="form-group">
@@ -93,7 +91,7 @@
         </div>
       </div>
       <div class="form-group">
-        <label class="form-label">Complaint details * (minimum 30 words)</label>
+        <label class="form-label">Complaint details * (minimum 20 words)</label>
         <textarea id="complaint-desc" class="form-control" style="height:120px"
           placeholder="Describe the incident clearly and factually. Include what happened, when, where, and any witnesses. Be specific."
           oninput="updateCharCount(this)"></textarea>
@@ -108,7 +106,6 @@
         </button>
       </div>
 
-      <!-- AI result preview -->
       <div class="ai-result" id="ai-result">
         <div class="text-xs text-muted mb-2" style="text-transform:uppercase;letter-spacing:.06em;font-weight:500">AI Analysis Result</div>
         <div class="ai-row"><div class="ai-key">Validity</div><div class="ai-val" id="ai-valid">—</div></div>
@@ -119,7 +116,6 @@
       </div>
     </div>
 
-    <!-- Success screen -->
     <div class="success-screen" id="success-section">
       <div class="success-icon">
         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
@@ -154,7 +150,7 @@
   function updateCharCount(el) {
     const words = el.value.trim().split(/\s+/).filter(w => w).length;
     document.getElementById('char-count').textContent = `${words} words`;
-    document.getElementById('char-count').style.color = words < 30 ? 'var(--red)' : 'var(--green)';
+    document.getElementById('char-count').style.color = words < 20 ? 'var(--red)' : 'var(--green)';
   }
 
   async function submitComplaint() {
@@ -168,7 +164,7 @@
       return showToast('Please fill in all fields', 'error');
     }
     const words = description.split(/\s+/).filter(w => w).length;
-    if (words < 30) return showToast('Please describe the incident in at least 30 words', 'error');
+    if (words < 20) return showToast('Please describe the incident in at least 20 words', 'error');
 
     setLoading(true);
 
