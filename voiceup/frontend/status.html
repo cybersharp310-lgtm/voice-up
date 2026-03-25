@@ -57,7 +57,7 @@
     const { data: p } = await sb.from('users').select('*').eq('auth_id', user.id).maybeSingle();
     if (!p) return window.location.href = 'index.html';
 
-    const { data: complaints } = await supabase
+    const { data: complaints } = await sb
       .from('complaints').select('*')
       .eq('complainant_id', p.id)
       .order('created_at', { ascending: false });
