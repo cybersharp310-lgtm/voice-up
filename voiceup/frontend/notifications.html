@@ -60,14 +60,14 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="config.js"></script>
 <script>
-  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: true, autoRefreshToken: true, storageKey: 'voiceup-session' } });
   let userId = null;
   let notifs = [];
 
   async function init() {
     const { data: { user } } = await sb.auth.getUser();
     if (!user) return window.location.href = 'index.html';
-    const { data: p } = await sb.from('users').select('id').eq('auth_id', user.id).single();
+    const { data: p } = await sb.from('users').select('id').eq('auth_id', user.id).maybeSingle();
     if (!p) return window.location.href = 'index.html';
     userId = p.id;
     await loadNotifs();
