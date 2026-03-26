@@ -290,3 +290,54 @@ select.form-control option { background: var(--bg-dark); color: var(--text); }
 .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
 
 .hidden { display: none !important; }
+/* ── Header Copyright Badge (VoiceUp Theme) ── */
+.header-right-group {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.header-copyright {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px; 
+  background: rgba(59, 130, 246, 0.05); /* Subtle blue tint */
+  border: 1px solid rgba(59, 130, 246, 0.15);
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  cursor: default;
+}
+
+.header-copyright:hover {
+  background: rgba(59, 130, 246, 0.1);
+  border-color: rgba(59, 130, 246, 0.4);
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.15);
+  transform: translateY(-1px);
+}
+
+.hc-icon {
+  width: 16px; 
+  height: 16px;
+  animation: spin-slow 15s linear infinite;
+}
+
+@keyframes spin-slow {
+  100% { transform: rotate(360deg); }
+}
+
+.hc-text {
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+  font-family: var(--font-body);
+}
+
+.hc-text strong {
+  color: var(--text);
+  font-family: var(--font-head);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
