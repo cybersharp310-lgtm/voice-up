@@ -55,6 +55,25 @@
     .detail-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 12px; }
     .detail-row:last-child { border-bottom: none; }
     .detail-key { color: var(--muted); }
+
+    /* Clean Copyright Badge Fix */
+    .header-right-group { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+    .footer-credit {
+      display: inline-flex; align-items: center; gap: 10px;
+      padding: 8px 12px; background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px;
+      backdrop-filter: blur(12px); transition: all 0.3s ease;
+    }
+    .footer-credit:hover {
+      background: rgba(255, 255, 255, 0.06); border-color: rgba(245, 158, 11, 0.3);
+    }
+    .copy-badge {
+      width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
+      background: rgba(245, 158, 11, 0.1); color: var(--amber);
+      border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 8px;
+      font-size: 14px; font-family: var(--font-head);
+    }
+    .copy-info { line-height: 1.2; font-family: var(--font-body); text-align: left; }
   </style>
 </head>
 <body>
@@ -92,19 +111,18 @@
       
       <div class="header-right-group">
         <div class="text-xs text-muted" id="last-refresh"></div>
-        <div class="header-copyright">
-          <svg class="hc-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round">
-            <path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32l1.41 1.41M2 12h2m16 0h2M4.93 19.07l1.41-1.41m11.32-11.32l1.41-1.41" stroke="var(--blue)" opacity="0.6"/>
-            <path d="M14.5 9a3.5 3.5 0 1 0 0 6" stroke="var(--amber)"/>
-          </svg>
-          <span class="hc-text">Developed by <strong>Ketan Verma</strong></span>
+        <div class="footer-credit">
+          <div class="copy-badge">&copy;</div>
+          <div class="copy-info">
+            <div class="text-xs">Developed by <strong class="text-amber">Ketan Verma</strong></div>
+          </div>
         </div>
       </div>
     </div>
 
     <div class="grid-4 mb-3">
       <div class="admin-stat"><div class="admin-stat-val text-amber" id="s-total">—</div><div class="admin-stat-lbl">Total</div></div>
-      <div class="admin-stat"><div class="admin-stat-val" style="color:var(--blue)" id="s-pending">—</div><div class="admin-stat-lbl">Pending</div></div>
+      <div class="admin-stat"><div class="admin-stat-val" style="color:var(--primary)" id="s-pending">—</div><div class="admin-stat-lbl">Pending</div></div>
       <div class="admin-stat"><div class="admin-stat-val text-green" id="s-approved">—</div><div class="admin-stat-lbl">Approved</div></div>
       <div class="admin-stat"><div class="admin-stat-val text-red" id="s-fake">—</div><div class="admin-stat-lbl">Fake / banned</div></div>
     </div>
