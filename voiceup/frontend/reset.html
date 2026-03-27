@@ -26,6 +26,19 @@
     .step-title { font-family:var(--font-head); font-size:18px; text-align:center; margin-bottom:6px; }
     .step-sub { font-size:12px; color:var(--muted); text-align:center; margin-bottom:24px; line-height:1.6; }
     .success-icon { width:60px; height:60px; border-radius:50%; background:rgba(34,197,94,.1); border:1px solid rgba(34,197,94,.2); display:flex; align-items:center; justify-content:center; margin:0 auto 16px; }
+
+    /* FIX 7 — Pre-send info hint */
+    .expiry-hint {
+      display: flex; gap: 8px; align-items: flex-start;
+      background: rgba(245,166,35,.05); border: 1px solid rgba(245,166,35,.2);
+      border-radius: 10px; padding: 12px 14px; margin-bottom: 20px;
+      font-size: 11px; color: rgba(245,166,35,.9); line-height: 1.6;
+    }
+    .expiry-hint svg { flex-shrink:0; margin-top:1px; opacity:.8; }
+
+    /* Spinner */
+    .spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:inline-block}
+    @keyframes spin{to{transform:rotate(360deg)}}
   </style>
 </head>
 <body>
@@ -41,11 +54,23 @@
   <div class="step active" id="step-request">
     <div class="step-title">Forgot password?</div>
     <div class="step-sub">Enter your registered email and we'll send you a reset link.</div>
+
+    <!-- FIX 7: Expiry hint shown BEFORE sending the email -->
+    <div class="expiry-hint">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      <div>
+        The reset link we'll send is <strong>valid for 1 hour only</strong>.
+        Please also check your spam or junk folder if you don't see it in your inbox.
+      </div>
+    </div>
+
     <div class="form-group">
       <label class="form-label">Email address</label>
       <input id="reset-email" type="email" class="form-control" placeholder="you@college.edu"/>
     </div>
-    <button class="btn btn-primary btn-full" onclick="sendReset()">
+    <button class="btn btn-primary btn-full" id="req-btn" onclick="sendReset()">
       <span id="req-text">Send reset link</span>
       <span id="req-spin" class="spinner hidden"></span>
     </button>
@@ -74,13 +99,13 @@
     <div class="step-sub">Choose a strong new password for your VoiceUp account.</div>
     <div class="form-group">
       <label class="form-label">New password</label>
-      <input id="new-pass" type="password" class="form-control" placeholder="Min. 6 characters"/>
+      <input id="new-pass" type="password" class="form-control" placeholder="Min. 8 characters"/>
     </div>
     <div class="form-group">
       <label class="form-label">Confirm password</label>
       <input id="confirm-pass" type="password" class="form-control" placeholder="Repeat password"/>
     </div>
-    <button class="btn btn-primary btn-full" onclick="updatePassword()">
+    <button class="btn btn-primary btn-full" id="upd-btn" onclick="updatePassword()">
       <span id="upd-text">Update password</span>
       <span id="upd-spin" class="spinner hidden"></span>
     </button>
@@ -98,14 +123,15 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="config.js"></script>
 <script>
-  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: true, autoRefreshToken: true, storageKey: 'voiceup-session' } });
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: { persistSession: true, autoRefreshToken: true, storageKey: 'voiceup-session' }
+  });
 
   // Check if this is a recovery link (Supabase puts #access_token in URL)
   window.addEventListener('load', async () => {
     const hash = window.location.hash;
     if (hash.includes('type=recovery')) {
       showStep('step-newpass');
-      // Supabase auto-handles the session from the hash
       const { data, error } = await sb.auth.getSession();
       if (error) showToast('Invalid or expired reset link', 'error');
     }
@@ -126,7 +152,14 @@
     });
     setLoading('req', false);
 
-    if (error) return showToast(error.message, 'error');
+    if (error) {
+      // FIX 1: Also catch rate limit on reset page
+      const msg = error.message.toLowerCase();
+      if (msg.includes('rate') || msg.includes('too many')) {
+        return showToast('Too many reset requests. Please wait a few minutes before trying again.', 'error');
+      }
+      return showToast(error.message, 'error');
+    }
     document.getElementById('sent-email').textContent = email;
     showStep('step-sent');
   }
@@ -134,8 +167,8 @@
   async function updatePassword() {
     const pass    = document.getElementById('new-pass').value;
     const confirm = document.getElementById('confirm-pass').value;
-    if (!pass || pass.length < 6) return showToast('Password must be at least 6 characters', 'error');
-    if (pass !== confirm)         return showToast('Passwords do not match', 'error');
+    if (!pass || pass.length < 8) return showToast('Password must be at least 8 characters', 'error');
+    if (pass !== confirm) return showToast('Passwords do not match', 'error');
 
     setLoading('upd', true);
     const { error } = await sb.auth.updateUser({ password: pass });
@@ -146,6 +179,8 @@
   }
 
   function setLoading(prefix, on) {
+    const btn = document.getElementById(prefix + '-btn');
+    if (btn) btn.disabled = on;
     document.getElementById(`${prefix}-text`).classList.toggle('hidden', on);
     document.getElementById(`${prefix}-spin`).classList.toggle('hidden', !on);
   }
@@ -155,7 +190,7 @@
     t.className = `toast ${type}`;
     t.textContent = msg;
     document.getElementById('toast-container').appendChild(t);
-    setTimeout(() => t.remove(), 4000);
+    setTimeout(() => t.remove(), 4500);
   }
 </script>
 </body>
