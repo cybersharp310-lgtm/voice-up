@@ -22,6 +22,49 @@
     .role-btn{flex:1;padding:9px;border:1px solid var(--border);border-radius:8px;background:var(--navy3);color:var(--muted);font-size:12px;cursor:pointer;text-align:center;transition:all .15s;font-family:var(--font-body)}
     .role-btn.active{border-color:var(--amber);color:var(--amber);background:rgba(245,166,35,.08)}
     #register-section{display:none}
+
+    /* FIX 3 — Password strength meter */
+    .pw-strength-bar{height:4px;border-radius:2px;margin-top:6px;overflow:hidden;background:rgba(255,255,255,.08)}
+    .pw-strength-fill{height:100%;border-radius:2px;width:0%;transition:width .3s,background .3s}
+    .pw-strength-label{font-size:10px;margin-top:4px;transition:color .3s}
+    .pw-rules{font-size:10px;color:var(--muted);margin-top:5px;line-height:1.7}
+    .pw-rule{display:flex;align-items:center;gap:5px}
+    .pw-rule-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.2);flex-shrink:0;transition:background .2s}
+    .pw-rule.pass .pw-rule-dot{background:var(--green)}
+    .pw-rule.pass{color:var(--green)}
+
+    /* FIX 2 — Admin invite code field */
+    #admin-code-group{display:none}
+    #admin-code-group .admin-code-hint{font-size:10px;color:var(--muted);margin-top:5px;line-height:1.5}
+
+    /* FIX 6 — Math CAPTCHA */
+    .captcha-box{
+      background:rgba(255,255,255,.03);border:1px solid var(--border);
+      border-radius:10px;padding:12px 14px;display:flex;
+      align-items:center;gap:12px;margin-bottom:20px;
+    }
+    .captcha-q{font-size:13px;font-weight:600;white-space:nowrap;flex-shrink:0}
+    .captcha-input{
+      width:70px;background:rgba(0,0,0,.2);border:1px solid var(--border);
+      border-radius:8px;padding:8px 10px;font-size:14px;color:var(--text);
+      font-family:var(--font-body);outline:none;text-align:center;
+    }
+    .captcha-input:focus{border-color:#8B5CF6;box-shadow:0 0 0 3px rgba(139,92,246,.15)}
+    .captcha-refresh{background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:4px;line-height:1;transition:transform .2s}
+    .captcha-refresh:hover{transform:rotate(180deg);color:var(--text)}
+
+    /* FIX 1 — Rate limit alert */
+    .rate-alert{
+      background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.25);
+      border-radius:10px;padding:12px 14px;font-size:12px;color:#fca5a5;
+      line-height:1.6;margin-bottom:16px;display:none;
+    }
+    .rate-alert.show{display:block}
+    .rate-alert strong{color:var(--red)}
+
+    /* Spinner (in case style.css doesn't define it) */
+    .spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:inline-block}
+    @keyframes spin{to{transform:rotate(360deg)}}
   </style>
 </head>
 <body>
@@ -31,41 +74,122 @@
     <div class="brand-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#07101f" stroke-width="2.5" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
     <div class="brand-name">Voice<span>Up</span></div>
   </div>
+
   <div class="tab-row">
     <button class="tab-btn active" onclick="switchTab('login')">Sign in</button>
     <button class="tab-btn" onclick="switchTab('register')">Register</button>
   </div>
+
+  <!-- ── LOGIN ── -->
   <div id="login-section">
     <div class="login-title">Welcome back</div>
     <div class="login-sub">Sign in to the complaint portal</div>
+
+    <!-- FIX 1: Rate limit friendly error banner -->
+    <div class="rate-alert" id="rate-limit-alert">
+      <strong>Too many sign-in attempts.</strong> Please wait a few minutes before trying again.
+      Your account is safe — this is an email service limit, not a lockout.
+    </div>
+
     <div class="form-group"><label class="form-label">Email</label><input id="login-email" type="email" class="form-control" placeholder="you@college.edu"/></div>
     <div class="form-group"><label class="form-label">Password</label><input id="login-password" type="password" class="form-control" placeholder="••••••••"/></div>
-    <button class="btn btn-primary btn-full" onclick="handleLogin()"><span id="login-text">Sign in</span><span id="login-spin" class="spinner hidden"></span></button>
-    <div style="text-align:center;margin-top:12px;font-size:12px;color:var(--muted)"><a href="reset.html" style="color:var(--amber)">Forgot password?</a></div>
+
+    <!-- FIX 5: button has id so we can disable it properly -->
+    <button class="btn btn-primary btn-full" id="login-btn" onclick="handleLogin()">
+      <span id="login-text">Sign in</span>
+      <span id="login-spin" class="spinner hidden"></span>
+    </button>
+    <div style="text-align:center;margin-top:12px;font-size:12px;color:var(--muted)">
+      <a href="reset.html" style="color:var(--amber)">Forgot password?</a>
+    </div>
   </div>
+
+  <!-- ── REGISTER ── -->
   <div id="register-section">
     <div class="login-title">Create account</div>
     <div class="login-sub">Join the VoiceUp platform</div>
-    <div class="form-group"><label class="form-label">Sign up as</label>
-      <div class="role-row"><div class="role-btn active" onclick="selectRole('student',this)">Student</div><div class="role-btn" onclick="selectRole('admin',this)">Admin</div></div>
+
+    <!-- Role selector -->
+    <div class="form-group">
+      <label class="form-label">Sign up as</label>
+      <div class="role-row">
+        <div class="role-btn active" onclick="selectRole('student',this)">Student</div>
+        <div class="role-btn" onclick="selectRole('admin',this)">Admin</div>
+      </div>
     </div>
+
+    <!-- FIX 2: Admin invite code — hidden until Admin role selected -->
+    <div class="form-group" id="admin-code-group">
+      <label class="form-label">Admin invite code</label>
+      <input id="reg-admin-code" type="password" class="form-control" placeholder="Enter secret invite code"/>
+      <div class="admin-code-hint">
+        Contact your system administrator to obtain an invite code.
+        Admin accounts cannot be self-registered without it.
+      </div>
+    </div>
+
     <div class="grid-2">
       <div class="form-group mb-1"><label class="form-label">Full name</label><input id="reg-name" type="text" class="form-control" placeholder="Your name"/></div>
       <div class="form-group mb-1"><label class="form-label">Roll number</label><input id="reg-roll" type="text" class="form-control" placeholder="BCA2023001"/></div>
     </div>
     <div class="form-group"><label class="form-label">Email</label><input id="reg-email" type="email" class="form-control" placeholder="you@college.edu"/></div>
-    <div class="form-group"><label class="form-label">Department</label>
-      <select id="reg-dept" class="form-control"><option value="">Select department</option><option>Computer Science</option><option>Mathematics</option><option>Physics</option><option>Administration</option><option>Other</option></select>
+    <div class="form-group">
+      <label class="form-label">Department</label>
+      <select id="reg-dept" class="form-control">
+        <option value="">Select department</option>
+        <option>Computer Science</option>
+        <option>Mathematics</option>
+        <option>Physics</option>
+        <option>Administration</option>
+        <option>Other</option>
+      </select>
     </div>
-    <div class="form-group"><label class="form-label">Password</label><input id="reg-password" type="password" class="form-control" placeholder="Min. 6 characters"/></div>
-    <button class="btn btn-primary btn-full" onclick="handleRegister()"><span id="reg-text">Create account</span><span id="reg-spin" class="spinner hidden"></span></button>
+
+    <!-- FIX 3: Password with strength meter -->
+    <div class="form-group">
+      <label class="form-label">Password</label>
+      <input id="reg-password" type="password" class="form-control" placeholder="Min. 8 characters" oninput="checkStrength(this.value)"/>
+      <div class="pw-strength-bar"><div class="pw-strength-fill" id="pw-fill"></div></div>
+      <div class="pw-strength-label" id="pw-label" style="color:var(--muted)">Enter a password</div>
+      <div class="pw-rules" id="pw-rules">
+        <div class="pw-rule" id="rule-len"><span class="pw-rule-dot"></span>At least 8 characters</div>
+        <div class="pw-rule" id="rule-upper"><span class="pw-rule-dot"></span>One uppercase letter</div>
+        <div class="pw-rule" id="rule-num"><span class="pw-rule-dot"></span>One number</div>
+        <div class="pw-rule" id="rule-special"><span class="pw-rule-dot"></span>One special character (!@#$…)</div>
+      </div>
+    </div>
+
+    <!-- FIX 4: Confirm password field -->
+    <div class="form-group">
+      <label class="form-label">Confirm password</label>
+      <input id="reg-confirm" type="password" class="form-control" placeholder="Repeat your password" oninput="checkConfirm()"/>
+      <div class="pw-strength-label" id="confirm-label" style="color:var(--muted)"></div>
+    </div>
+
+    <!-- FIX 6: Math CAPTCHA bot protection -->
+    <div class="captcha-box">
+      <span class="captcha-q" id="captcha-question">Loading…</span>
+      <input class="captcha-input" id="captcha-answer" type="number" placeholder="?" autocomplete="off"/>
+      <button class="captcha-refresh" onclick="newCaptcha()" title="New question">↻</button>
+      <span style="font-size:11px;color:var(--muted);flex:1;text-align:right">Human check</span>
+    </div>
+
+    <!-- FIX 5: Button has id to allow disabling -->
+    <button class="btn btn-primary btn-full" id="reg-btn" onclick="handleRegister()">
+      <span id="reg-text">Create account</span>
+      <span id="reg-spin" class="spinner hidden"></span>
+    </button>
   </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="config.js"></script>
 <script>
-// Persistent session - user stays logged in even after closing browser
+// ── Config ──────────────────────────────────────────────
+// IMPORTANT: Change this secret before going to production.
+// Ideally move this check to a Supabase Edge Function so it's not exposed client-side.
+const ADMIN_INVITE_CODE = 'VOICEUP-ADMIN-2024';
+
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, storageKey: 'voiceup-session' }
 });
@@ -73,18 +197,27 @@ const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
 let selectedRole = 'student';
 let redirecting  = false;
 
-// Auto-redirect if session already exists (cookie/localStorage)
+// ── CAPTCHA state ────────────────────────────────────────
+let captchaAnswer = 0;
+
+function newCaptcha() {
+  const a = Math.floor(Math.random() * 10) + 1;
+  const b = Math.floor(Math.random() * 10) + 1;
+  captchaAnswer = a + b;
+  document.getElementById('captcha-question').textContent = `${a} + ${b} = ?`;
+  document.getElementById('captcha-answer').value = '';
+}
+
+// ── Auto-redirect if already logged in ──────────────────
 sb.auth.getSession().then(({ data: { session } }) => {
   if (session && !redirecting) { redirecting = true; redirectByRole(session.user); }
 });
 
 async function redirectByRole(user) {
   try {
-    // maybeSingle() returns null instead of 404 error when row missing
     const { data: profile, error } = await sb.from('users').select('role').eq('auth_id', user.id).maybeSingle();
     if (error) throw error;
     if (!profile) {
-      // Profile missing - create it silently then redirect
       await sb.from('users').upsert({ auth_id: user.id, name: user.email.split('@')[0], email: user.email, role: 'student' }, { onConflict: 'auth_id' });
       window.location.href = 'student.html';
       return;
@@ -97,75 +230,194 @@ async function redirectByRole(user) {
   }
 }
 
+// ── Tab switching ────────────────────────────────────────
 function switchTab(tab) {
   document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active',(tab==='login')===(i===0)));
   document.getElementById('login-section').style.display    = tab==='login'    ? 'block' : 'none';
   document.getElementById('register-section').style.display = tab==='register' ? 'block' : 'none';
+  if (tab === 'register') newCaptcha();
 }
 
+// FIX 2 — Show/hide admin code field based on role
 function selectRole(role, el) {
   selectedRole = role;
   document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
   el.classList.add('active');
+  document.getElementById('admin-code-group').style.display = role === 'admin' ? 'block' : 'none';
 }
 
+// ── FIX 3 — Password strength checker ───────────────────
+function checkStrength(val) {
+  const rules = {
+    len:     val.length >= 8,
+    upper:   /[A-Z]/.test(val),
+    num:     /[0-9]/.test(val),
+    special: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(val),
+  };
+
+  ['len','upper','num','special'].forEach(k => {
+    const el = document.getElementById('rule-' + k);
+    el.classList.toggle('pass', rules[k]);
+  });
+
+  const score = Object.values(rules).filter(Boolean).length;
+  const fill  = document.getElementById('pw-fill');
+  const label = document.getElementById('pw-label');
+
+  if (!val) {
+    fill.style.width = '0%';
+    label.textContent = 'Enter a password';
+    label.style.color = 'var(--muted)';
+    return;
+  }
+  if (score <= 1) {
+    fill.style.width = '25%'; fill.style.background = 'var(--red)';
+    label.textContent = 'Weak'; label.style.color = 'var(--red)';
+  } else if (score === 2) {
+    fill.style.width = '50%'; fill.style.background = 'var(--amber)';
+    label.textContent = 'Fair'; label.style.color = 'var(--amber)';
+  } else if (score === 3) {
+    fill.style.width = '75%'; fill.style.background = '#60A5FA';
+    label.textContent = 'Good'; label.style.color = '#60A5FA';
+  } else {
+    fill.style.width = '100%'; fill.style.background = 'var(--green)';
+    label.textContent = 'Strong ✓'; label.style.color = 'var(--green)';
+  }
+
+  // Also re-check confirm match if already typed
+  checkConfirm();
+}
+
+// FIX 4 — Confirm password live checker
+function checkConfirm() {
+  const pass    = document.getElementById('reg-password').value;
+  const confirm = document.getElementById('reg-confirm').value;
+  const label   = document.getElementById('confirm-label');
+  if (!confirm) { label.textContent = ''; return; }
+  if (pass === confirm) {
+    label.textContent = 'Passwords match ✓';
+    label.style.color = 'var(--green)';
+  } else {
+    label.textContent = 'Passwords do not match';
+    label.style.color = 'var(--red)';
+  }
+}
+
+// ── LOGIN ────────────────────────────────────────────────
 async function handleLogin() {
   const email    = document.getElementById('login-email').value.trim();
   const password = document.getElementById('login-password').value;
   if (!email || !password) return showToast('Please fill in all fields', 'error');
+
+  // FIX 5: disable button to prevent double-click
   setLoading('login', true);
+
   const { data, error } = await sb.auth.signInWithPassword({ email, password });
   setLoading('login', false);
+
   if (error) {
-    if (error.message.includes('Invalid login')) return showToast('Wrong email or password', 'error');
-    if (error.message.includes('Email not confirmed')) return showToast('Check email and click confirm link', 'error');
+    const msg = error.message.toLowerCase();
+
+    // FIX 1: Friendly rate limit error
+    if (msg.includes('rate') || msg.includes('too many') || msg.includes('email rate') || msg.includes('over_email_send_rate_limit')) {
+      document.getElementById('rate-limit-alert').classList.add('show');
+      return showToast('Too many attempts — please wait a few minutes.', 'error');
+    }
+    document.getElementById('rate-limit-alert').classList.remove('show');
+
+    if (msg.includes('invalid login') || msg.includes('invalid credentials')) return showToast('Wrong email or password', 'error');
+    if (msg.includes('email not confirmed')) return showToast('Please confirm your email first — check your inbox.', 'error');
     return showToast(error.message, 'error');
   }
+
+  document.getElementById('rate-limit-alert').classList.remove('show');
   showToast('Signed in! Redirecting...', 'success');
   redirecting = true;
   redirectByRole(data.user);
 }
 
+// ── REGISTER ─────────────────────────────────────────────
 async function handleRegister() {
   const name     = document.getElementById('reg-name').value.trim();
   const roll     = document.getElementById('reg-roll').value.trim();
   const email    = document.getElementById('reg-email').value.trim();
   const dept     = document.getElementById('reg-dept').value;
   const password = document.getElementById('reg-password').value;
+  const confirm  = document.getElementById('reg-confirm').value;
+
+  // FIX 2: Admin invite code validation
+  if (selectedRole === 'admin') {
+    const code = document.getElementById('reg-admin-code').value.trim();
+    if (!code) return showToast('Admin invite code is required', 'error');
+    if (code !== ADMIN_INVITE_CODE) return showToast('Invalid admin invite code', 'error');
+  }
+
   if (!name || !email || !password || !dept) return showToast('Please fill all fields', 'error');
-  if (password.length < 6) return showToast('Password must be at least 6 characters', 'error');
+
+  // FIX 3: Password strength — require at least 8 chars + 1 uppercase + 1 number
+  if (password.length < 8) return showToast('Password must be at least 8 characters', 'error');
+  if (!/[A-Z]/.test(password)) return showToast('Password needs at least one uppercase letter', 'error');
+  if (!/[0-9]/.test(password)) return showToast('Password needs at least one number', 'error');
+
+  // FIX 4: Confirm password match
+  if (password !== confirm) return showToast('Passwords do not match', 'error');
+
+  // FIX 6: CAPTCHA check
+  const userAnswer = parseInt(document.getElementById('captcha-answer').value, 10);
+  if (isNaN(userAnswer) || userAnswer !== captchaAnswer) {
+    newCaptcha();
+    return showToast('Incorrect answer — please solve the math question', 'error');
+  }
+
+  // FIX 5: Disable button
   setLoading('reg', true);
+
   const { data, error } = await sb.auth.signUp({ email, password });
   if (error) {
     setLoading('reg', false);
-    if (error.message.includes('already registered')) return showToast('Email already exists. Try signing in.', 'error');
+    newCaptcha();
+    if (error.message.toLowerCase().includes('already registered')) return showToast('Email already exists. Try signing in.', 'error');
+    // FIX 1: Rate limit during signup
+    if (error.message.toLowerCase().includes('rate') || error.message.toLowerCase().includes('too many')) {
+      return showToast('Too many sign-up attempts. Please wait a few minutes and try again.', 'error');
+    }
     return showToast(error.message, 'error');
   }
-  // upsert avoids 409 conflict if profile row already exists
+
   await sb.from('users').upsert({
     auth_id: data.user.id, name, email,
     roll_number: roll || null, department: dept, role: selectedRole
   }, { onConflict: 'auth_id' });
+
   setLoading('reg', false);
   showToast('Account created! Signing you in...', 'success');
-  // Auto sign in immediately after register
+
   setTimeout(async () => {
     const { data: d2, error: e2 } = await sb.auth.signInWithPassword({ email, password });
     if (!e2 && d2.user) { redirecting = true; redirectByRole(d2.user); }
   }, 800);
 }
 
+// ── Helpers ──────────────────────────────────────────────
+
+// FIX 5: setLoading now also enables/disables the button element
 function setLoading(prefix, on) {
-  document.getElementById(prefix+'-text').classList.toggle('hidden', on);
-  document.getElementById(prefix+'-spin').classList.toggle('hidden', !on);
+  const btn = document.getElementById(prefix + '-btn');
+  if (btn) btn.disabled = on;
+  document.getElementById(prefix + '-text').classList.toggle('hidden', on);
+  document.getElementById(prefix + '-spin').classList.toggle('hidden', !on);
 }
 
 function showToast(msg, type='info') {
   const t = document.createElement('div');
-  t.className = 'toast '+type; t.textContent = msg;
+  t.className = 'toast ' + type;
+  t.textContent = msg;
   document.getElementById('toast-container').appendChild(t);
-  setTimeout(() => t.remove(), 4000);
+  setTimeout(() => t.remove(), 4500);
 }
+
+// Init CAPTCHA on load
+newCaptcha();
 </script>
 </body>
 </html>
