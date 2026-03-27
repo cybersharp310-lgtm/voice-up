@@ -176,7 +176,8 @@ select.form-control option { background: var(--bg-dark); color: var(--text); }
 }
 .badge-pending  { background: var(--amber-bg); color: var(--amber); border: 1px solid rgba(245,158,11,.3); box-shadow: 0 0 10px rgba(245,158,11,.1); }
 .badge-approved { background: var(--green-bg); color: var(--green); border: 1px solid rgba(16,185,129,.3); box-shadow: 0 0 10px rgba(16,185,129,.1); }
-.badge-rejected, .badge-fake, .badge-high { background: var(--red-bg); color: var(--red); border: 1px solid rgba(244,63,94,.3); box-shadow: 0 0 10px rgba(244,63,94,.1); }
+/* ADDED: .badge-ai-rejected */
+.badge-rejected, .badge-fake, .badge-high, .badge-ai-rejected { background: var(--red-bg); color: var(--red); border: 1px solid rgba(244,63,94,.3); box-shadow: 0 0 10px rgba(244,63,94,.1); }
 .badge-medium   { background: var(--amber-bg); color: var(--amber); border: 1px solid rgba(245,158,11,.3); }
 .badge-low      { background: var(--green-bg); color: var(--green); border: 1px solid rgba(16,185,129,.3); }
 .badge-cat      { background: rgba(59,130,246,0.1); color: var(--primary); border: 1px solid rgba(59,130,246,.3); }
@@ -264,6 +265,7 @@ select.form-control option { background: var(--bg-dark); color: var(--text); }
   border-radius: 16px; padding: 16px 24px; font-size: 14px; font-weight: 600;
   min-width: 320px; box-shadow: 0 20px 40px rgba(0,0,0,0.5);
   animation: popGlass 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  margin-bottom: 10px; /* ADDED: margin to prevent stacking overlap */
 }
 .toast.success { border-bottom: 3px solid var(--green); }
 .toast.error   { border-bottom: 3px solid var(--red); }
@@ -290,54 +292,49 @@ select.form-control option { background: var(--bg-dark); color: var(--text); }
 .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
 
 .hidden { display: none !important; }
-/* ── Header Copyright Badge (VoiceUp Theme) ── */
-.header-right-group {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 10px;
-}
 
-.header-copyright {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 16px; 
-  background: rgba(59, 130, 246, 0.05); /* Subtle blue tint */
-  border: 1px solid rgba(59, 130, 246, 0.15);
-  border-radius: 8px;
-  transition: all 0.3s ease;
-  cursor: default;
-}
-
-.header-copyright:hover {
-  background: rgba(59, 130, 246, 0.1);
-  border-color: rgba(59, 130, 246, 0.4);
-  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.15);
-  transform: translateY(-1px);
-}
-
-.hc-icon {
-  width: 16px; 
-  height: 16px;
-  animation: spin-slow 15s linear infinite;
-}
-
-@keyframes spin-slow {
-  100% { transform: rotate(360deg); }
-}
-
-.hc-text {
-  font-size: 11px;
-  color: var(--muted);
-  letter-spacing: 0.04em;
-  font-family: var(--font-body);
-}
-
-.hc-text strong {
-  color: var(--text);
-  font-family: var(--font-head);
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
+/* ── ADDED: Mobile Responsiveness ── */
+@media (max-width: 768px) {
+  /* Stack grids to single column */
+  .grid-2, .grid-3, .grid-4 { 
+    grid-template-columns: 1fr; 
+    gap: 16px;
+  }
+  
+  /* Adjust main layout and padding */
+  .app-layout { 
+    flex-direction: column; 
+  }
+  .main { 
+    padding: 24px 16px; 
+    padding-bottom: 90px; /* Space for bottom nav */
+  }
+  
+  /* Move sidebar to a bottom navigation bar */
+  .sidebar {
+    position: fixed;
+    bottom: 0; left: 0; right: 0; top: auto;
+    width: 100%; height: 70px;
+    flex-direction: row; justify-content: space-around;
+    padding: 0 16px; border-right: none;
+    border-top: 1px solid var(--glass-border);
+    background: rgba(3, 7, 18, 0.8);
+  }
+  
+  /* Hide logo and dividers on mobile nav */
+  .sb-logo, .sb-divider { display: none; }
+  
+  /* Fix bottom icons alignment */
+  .sb-bottom { 
+    margin-top: 0; display: flex; flex-direction: row; gap: 16px;
+  }
+  
+  /* Adjust typography for smaller screens */
+  .page-title { font-size: 28px; }
+  .stat-val { font-size: 24px; }
+  
+  /* Fix login/reset boxes */
+  .login-box, .reset-box {
+    margin: 20px; padding: 24px;
+  }
 }
