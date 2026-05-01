@@ -494,13 +494,8 @@ async function handleRegister() {
     return showToast('This email is already registered. Please sign in.', 'error');
   }
 
-  await sb.from('users').upsert({
-    auth_id: data.user.id, name, email,
-    roll_number: roll || null, department: dept, role: 'student'
-  }, { onConflict: 'auth_id' });
-
   setLoading('reg', false);
-  showToast('Account created! Signing you in...', 'success');
+  showToast('Account created! Check your email to verify.', 'success');
 
   setTimeout(async () => {
     const { data: d2, error: e2 } = await sb.auth.signInWithPassword({ email, password });
