@@ -84,6 +84,16 @@ supabase functions deploy review-complaint
 
 ---
 
+## Student Registration Lock (Mock Verification)
+Because VoiceUp can't connect to the live university database, the student registration flow is gated by a **hardcoded allowlist** in the frontend.
+
+- Edit the allowlist in [frontend/index.html](frontend/index.html) (`STUDENT_ALLOWLIST` + `ALLOWED_STUDENT_EMAIL_DOMAINS`).
+- Enforced roll format is strict by design: `PROGRAM + 20xx + 3 digits` (example: `BCA2023001`).
+- Only allowlisted `roll + email` pairs can register as **Student**.
+- This is a frontend-only gate (good for demos / MVP). For real security, replicate the check in a Supabase Edge Function.
+
+---
+
 ## How the AI Works
 When a student submits a complaint:
 1. Edge function sends the text to Groq (Llama 3.1 8B)
