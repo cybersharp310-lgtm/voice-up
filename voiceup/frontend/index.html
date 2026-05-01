@@ -488,6 +488,12 @@ async function handleRegister() {
     return showToast(error.message, 'error');
   }
 
+  // Detect fake user object returned for already-registered emails
+  if (data?.user?.identities?.length === 0) {
+    setLoading('reg', false);
+    return showToast('This email is already registered. Please sign in.', 'error');
+  }
+
   await sb.from('users').upsert({
     auth_id: data.user.id, name, email,
     roll_number: roll || null, department: dept, role: 'student'
