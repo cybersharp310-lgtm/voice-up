@@ -109,25 +109,6 @@
     <div class="login-title">Create account</div>
     <div class="login-sub">Join the VoiceUp platform</div>
 
-    <!-- Role selector -->
-    <div class="form-group">
-      <label class="form-label">Sign up as</label>
-      <div class="role-row">
-        <div class="role-btn active" onclick="selectRole('student',this)">Student</div>
-        <div class="role-btn" onclick="selectRole('admin',this)">Admin</div>
-      </div>
-    </div>
-
-    <!-- FIX 2: Admin invite code — hidden until Admin role selected -->
-    <div class="form-group" id="admin-code-group">
-      <label class="form-label">Admin invite code</label>
-      <input id="reg-admin-code" type="password" class="form-control" placeholder="Enter secret invite code"/>
-      <div class="admin-code-hint">
-        Contact your system administrator to obtain an invite code.
-        Admin accounts cannot be self-registered without it.
-      </div>
-    </div>
-
     <div class="grid-2">
       <div class="form-group mb-1"><label class="form-label">Full name</label><input id="reg-name" type="text" class="form-control" placeholder="Your name"/></div>
       <div class="form-group mb-1"><label class="form-label">Roll number</label><input id="reg-roll" type="text" class="form-control" placeholder="BCA2023001"/></div>
@@ -186,10 +167,6 @@
 <script src="config.js"></script>
 <script>
 // ── Config ──────────────────────────────────────────────
-// IMPORTANT: Change this secret before going to production.
-// Ideally move this check to a Supabase Edge Function so it's not exposed client-side.
-const ADMIN_INVITE_CODE = 'VOICEUP-ADMIN-2024';
-
 // ── Student verification (mock database) ─────────────────
 // NOTE: This is a FRONTEND-ONLY gate. A determined attacker can still bypass it.
 // For real security, mirror this check in a Supabase Edge Function and/or use DB-side policies.
@@ -215,7 +192,6 @@ const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, storageKey: 'voiceup-session' }
 });
 
-let selectedRole = 'student';
 let redirecting  = false;
 
 // ── Input validation helpers ─────────────────────────────
@@ -302,14 +278,6 @@ function switchTab(tab) {
   document.getElementById('login-section').style.display    = tab==='login'    ? 'block' : 'none';
   document.getElementById('register-section').style.display = tab==='register' ? 'block' : 'none';
   if (tab === 'register') newCaptcha();
-}
-
-// FIX 2 — Show/hide admin code field based on role
-function selectRole(role, el) {
-  selectedRole = role;
-  document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
-  el.classList.add('active');
-  document.getElementById('admin-code-group').style.display = role === 'admin' ? 'block' : 'none';
 }
 
 // ── FIX 3 — Password strength checker ───────────────────
@@ -415,13 +383,6 @@ async function handleRegister() {
   const password = document.getElementById('reg-password').value;
   const confirm  = document.getElementById('reg-confirm').value;
 
-  // FIX 2: Admin invite code validation
-  if (selectedRole === 'admin') {
-    const code = document.getElementById('reg-admin-code').value.trim();
-    if (!code) return showToast('Admin invite code is required', 'error');
-    if (code !== ADMIN_INVITE_CODE) return showToast('Invalid admin invite code', 'error');
-  }
-
   if (!name || !email || !password || !dept) return showToast('Please fill all fields', 'error');
 
   // Strict formatting checks
@@ -429,15 +390,13 @@ async function handleRegister() {
   if (!isValidEmailFormat(email)) return showToast('Enter a valid email address', 'error');
 
   // Student-only verification gate
-  if (selectedRole === 'student') {
-    const sanitizedName = name.replace(/\s+/g, '').toUpperCase();
-    const expectedEmail = `${sanitizedName}.${rollRaw}@gehu.ac.in`;
+  const sanitizedName = name.replace(/\s+/g, '').toUpperCase();
+  const expectedEmail = `${sanitizedName}.${rollRaw}@gehu.ac.in`;
 
-    if (!roll) return showToast('Roll number is required for students', 'error');
-    if (!isValidRollFormat(roll)) return showToast('Roll format must look like BCA2023001', 'error');
-    if (emailRaw !== expectedEmail) return showToast('Email must match the format: NAME.RollNo@gehu.ac.in', 'error');
-    if (!allowedStudents.includes(emailRaw)) return showToast('Student ID not recognized or not authorized.', 'error');
-  }
+  if (!roll) return showToast('Roll number is required for students', 'error');
+  if (!isValidRollFormat(roll)) return showToast('Roll format must look like BCA2023001', 'error');
+  if (emailRaw !== expectedEmail) return showToast('Email must match the format: NAME.RollNo@gehu.ac.in', 'error');
+  if (!allowedStudents.includes(emailRaw)) return showToast('Student ID not recognized or not authorized.', 'error');
 
   // FIX 3: Password strength — require at least 8 chars + 1 uppercase + 1 number
   if (password.length < 8) return showToast('Password must be at least 8 characters', 'error');
@@ -462,8 +421,8 @@ async function handleRegister() {
     password,
     options: {
       data: {
-        role: selectedRole,
-        roll_number: selectedRole === 'student' ? roll : null,
+        role: 'student',
+        roll_number: roll,
         department: dept,
         full_name: name
       }
@@ -482,7 +441,7 @@ async function handleRegister() {
 
   await sb.from('users').upsert({
     auth_id: data.user.id, name, email,
-    roll_number: roll || null, department: dept, role: selectedRole
+    roll_number: roll || null, department: dept, role: 'student'
   }, { onConflict: 'auth_id' });
 
   setLoading('reg', false);
