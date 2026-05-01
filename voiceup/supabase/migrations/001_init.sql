@@ -13,14 +13,15 @@ create table public.users (
   id uuid primary key default uuid_generate_v4(),
   auth_id uuid unique references auth.users(id) on delete cascade,
   name text not null,
-  email text unique not null,
+  email text unique not null check (email ~* '@gehu\.ac\.in$'),
   roll_number text unique,
   department text,
   role text not null default 'student' check (role in ('student', 'admin', 'accused')),
   is_banned boolean default false,
   ban_expiry timestamptz,
   last_complaint_date date,
-  created_at timestamptz default now()
+  created_at timestamptz default now(),
+  check (role <> 'student' or roll_number is not null)
 );
 
 -- ============================================

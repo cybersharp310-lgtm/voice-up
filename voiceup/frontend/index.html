@@ -148,7 +148,7 @@
     <!-- FIX 3: Password with strength meter -->
     <div class="form-group">
       <label class="form-label">Password</label>
-      <input id="reg-password" type="password" class="form-control" placeholder="Min. 8 characters" oninput="checkStrength(this.value)"/>
+      <input id="reg-password" type="password" class="form-control" placeholder="Min. 8 characters" autocomplete="new-password" oninput="checkStrength(this.value)"/>
       <div class="pw-strength-bar"><div class="pw-strength-fill" id="pw-fill"></div></div>
       <div class="pw-strength-label" id="pw-label" style="color:var(--muted)">Enter a password</div>
       <div class="pw-rules" id="pw-rules">
@@ -162,7 +162,7 @@
     <!-- FIX 4: Confirm password field -->
     <div class="form-group">
       <label class="form-label">Confirm password</label>
-      <input id="reg-confirm" type="password" class="form-control" placeholder="Repeat your password" oninput="checkConfirm()"/>
+      <input id="reg-confirm" type="password" class="form-control" placeholder="Repeat your password" autocomplete="new-password" oninput="checkConfirm()"/>
       <div class="pw-strength-label" id="confirm-label" style="color:var(--muted)"></div>
     </div>
 
@@ -190,12 +190,78 @@
 // Ideally move this check to a Supabase Edge Function so it's not exposed client-side.
 const ADMIN_INVITE_CODE = 'VOICEUP-ADMIN-2024';
 
+// ── Student verification (mock database) ─────────────────
+// NOTE: This is a FRONTEND-ONLY gate. A determined attacker can still bypass it.
+// For real security, mirror this check in a Supabase Edge Function and/or use DB-side policies.
+//
+// Format assumptions (strict by design):
+// - Roll: e.g. BCA2023001  (PROGRAM(2-6 letters) + YEAR(20xx) + 3 digits)
+// - Email: must be in allowed domains AND match allowlist entry
+const ALLOWED_STUDENT_EMAIL_DOMAINS = [
+  'gehu.ac.in',
+  'gehu.edu.in',
+  'geu.ac.in'
+];
+
+// Replace these entries with the university-provided verified list.
+// Keep roll + email exactly as students will type them (case-insensitive for email).
+const STUDENT_ALLOWLIST = [
+  { roll: 'BCA2023001', email: 'bca2023001@gehu.ac.in' },
+  { roll: 'BTECH2024123', email: 'btech2024123@gehu.ac.in' },
+  { roll: 'MBA2022007', email: 'mba2022007@gehu.ac.in' }
+];
+
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, storageKey: 'voiceup-session' }
 });
 
 let selectedRole = 'student';
 let redirecting  = false;
+
+// ── Input validation helpers ─────────────────────────────
+function normalizeSpaces(str) {
+  return String(str || '').replace(/\s+/g, ' ').trim();
+}
+
+function normalizeEmail(str) {
+  return String(str || '').trim().toLowerCase();
+}
+
+function normalizeRoll(str) {
+  return String(str || '').replace(/\s+/g, '').toUpperCase();
+}
+
+function isSafeHumanName(name) {
+  // Letters + spaces + . ' -  (no digits, no angle brackets)
+  // Keep strict to avoid garbage input and HTML-ish strings.
+  if (!name) return false;
+  if (name.length < 2 || name.length > 60) return false;
+  return /^[A-Za-z][A-Za-z .'-]*[A-Za-z]$/.test(name);
+}
+
+function isValidRollFormat(roll) {
+  // Strict: PROGRAM (2-6 letters) + YEAR (20xx) + 3 digits
+  // Examples: BCA2023001, MBA2022007, BTECH2024123
+  return /^[A-Z]{2,6}20\d{2}\d{3}$/.test(roll);
+}
+
+function isValidEmailFormat(email) {
+  // Intentionally conservative.
+  return /^[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,}$/.test(email);
+}
+
+function isAllowedStudentDomain(email) {
+  const at = email.lastIndexOf('@');
+  if (at === -1) return false;
+  const domain = email.slice(at + 1);
+  return ALLOWED_STUDENT_EMAIL_DOMAINS.includes(domain);
+}
+
+function isAllowlistedStudent(roll, email) {
+  const emailNorm = normalizeEmail(email);
+  const rollNorm = normalizeRoll(roll);
+  return STUDENT_ALLOWLIST.some((s) => normalizeRoll(s.roll) === rollNorm && normalizeEmail(s.email) === emailNorm);
+}
 
 // ── CAPTCHA state ────────────────────────────────────────
 let captchaAnswer = 0;
@@ -338,9 +404,13 @@ async function handleLogin() {
 
 // ── REGISTER ─────────────────────────────────────────────
 async function handleRegister() {
-  const name     = document.getElementById('reg-name').value.trim();
-  const roll     = document.getElementById('reg-roll').value.trim();
-  const email    = document.getElementById('reg-email').value.trim();
+  const allowedStudents = ['KETANVERMA.241741005@gehu.ac.in'];
+
+  const name     = normalizeSpaces(document.getElementById('reg-name').value);
+  const rollRaw  = document.getElementById('reg-roll').value;
+  const roll     = normalizeRoll(rollRaw);
+  const emailRaw = document.getElementById('reg-email').value;
+  const email    = normalizeEmail(emailRaw);
   const dept     = document.getElementById('reg-dept').value;
   const password = document.getElementById('reg-password').value;
   const confirm  = document.getElementById('reg-confirm').value;
@@ -353,6 +423,21 @@ async function handleRegister() {
   }
 
   if (!name || !email || !password || !dept) return showToast('Please fill all fields', 'error');
+
+  // Strict formatting checks
+  if (!isSafeHumanName(name)) return showToast('Enter a valid full name (letters only)', 'error');
+  if (!isValidEmailFormat(email)) return showToast('Enter a valid email address', 'error');
+
+  // Student-only verification gate
+  if (selectedRole === 'student') {
+    const sanitizedName = name.replace(/\s+/g, '').toUpperCase();
+    const expectedEmail = `${sanitizedName}.${rollRaw}@gehu.ac.in`;
+
+    if (!roll) return showToast('Roll number is required for students', 'error');
+    if (!isValidRollFormat(roll)) return showToast('Roll format must look like BCA2023001', 'error');
+    if (emailRaw !== expectedEmail) return showToast('Email must match the format: NAME.RollNo@gehu.ac.in', 'error');
+    if (!allowedStudents.includes(emailRaw)) return showToast('Student ID not recognized or not authorized.', 'error');
+  }
 
   // FIX 3: Password strength — require at least 8 chars + 1 uppercase + 1 number
   if (password.length < 8) return showToast('Password must be at least 8 characters', 'error');
@@ -372,7 +457,18 @@ async function handleRegister() {
   // FIX 5: Disable button
   setLoading('reg', true);
 
-  const { data, error } = await sb.auth.signUp({ email, password });
+  const { data, error } = await sb.auth.signUp({
+    email,
+    password,
+    options: {
+      data: {
+        role: selectedRole,
+        roll_number: selectedRole === 'student' ? roll : null,
+        department: dept,
+        full_name: name
+      }
+    }
+  });
   if (error) {
     setLoading('reg', false);
     newCaptcha();
