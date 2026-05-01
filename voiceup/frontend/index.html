@@ -111,7 +111,7 @@
 
     <div class="grid-2">
       <div class="form-group mb-1"><label class="form-label">Full name</label><input id="reg-name" type="text" class="form-control" placeholder="Your name"/></div>
-      <div class="form-group mb-1"><label class="form-label">Roll number</label><input id="reg-roll" type="text" class="form-control" placeholder="BCA2023001"/></div>
+      <div class="form-group mb-1"><label class="form-label">Roll number</label><input id="reg-roll" type="text" class="form-control" placeholder="241741005"/></div>
     </div>
     <div class="form-group"><label class="form-label">Email</label><input id="reg-email" type="email" class="form-control" placeholder="you@college.edu"/></div>
     <div class="form-group">
@@ -383,6 +383,8 @@ async function handleRegister() {
   const password = document.getElementById('reg-password').value;
   const confirm  = document.getElementById('reg-confirm').value;
 
+  if (!/^\d{1,10}$/.test(rollRaw)) return showToast('Roll number must contain only digits (up to 10).', 'error');
+
   if (!name || !email || !password || !dept) return showToast('Please fill all fields', 'error');
 
   // Strict formatting checks
@@ -395,7 +397,7 @@ async function handleRegister() {
 
   if (!roll) return showToast('Roll number is required for students', 'error');
   if (!isValidRollFormat(roll)) return showToast('Roll format must look like BCA2023001', 'error');
-  if (emailRaw !== expectedEmail) return showToast('Email must match the format: NAME.RollNo@gehu.ac.in', 'error');
+  if (emailRaw !== expectedEmail) return showToast('Email must exactly match the format: UPPERCASENAME.RollNo@gehu.ac.in', 'error');
   if (!allowedStudents.includes(emailRaw)) return showToast('Student ID not recognized or not authorized.', 'error');
 
   // FIX 3: Password strength — require at least 8 chars + 1 uppercase + 1 number
