@@ -279,8 +279,10 @@ async function redirectByRole(user) {
     const { data: profile, error } = await sb.from('users').select('role').eq('auth_id', user.id).maybeSingle();
     if (error) throw error;
     if (!profile) {
-      await sb.from('users').upsert({ auth_id: user.id, name: user.email.split('@')[0], email: user.email, role: 'student' }, { onConflict: 'auth_id' });
-      window.location.href = 'student.html';
+      // Break the loop: sign them out and show an error
+      await sb.auth.signOut();
+      redirecting = false;
+      showToast('Profile missing or incomplete. Please register again with your full details.', 'error');
       return;
     }
     window.location.href = profile.role === 'admin' ? 'admin.html' : 'student.html';
