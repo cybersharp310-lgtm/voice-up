@@ -372,33 +372,25 @@ async function handleLogin() {
 
 // ── REGISTER ─────────────────────────────────────────────
 async function handleRegister() {
-  const allowedStudents = ['KETANVERMA.241741005@gehu.ac.in'];
-
   const name     = normalizeSpaces(document.getElementById('reg-name').value);
-  const rollRaw  = document.getElementById('reg-roll').value;
-  const roll     = normalizeRoll(rollRaw);
-  const emailRaw = document.getElementById('reg-email').value;
-  const email    = normalizeEmail(emailRaw);
+  const roll     = document.getElementById('reg-roll').value;
+  const email    = document.getElementById('reg-email').value;
   const dept     = document.getElementById('reg-dept').value;
   const password = document.getElementById('reg-password').value;
   const confirm  = document.getElementById('reg-confirm').value;
-
-  if (!/^\d{1,10}$/.test(rollRaw)) return showToast('Roll number must contain only digits (up to 10).', 'error');
+  const userAnswer = parseInt(document.getElementById('captcha-answer').value, 10);
 
   if (!name || !email || !password || !dept) return showToast('Please fill all fields', 'error');
 
-  // Strict formatting checks
-  if (!isSafeHumanName(name)) return showToast('Enter a valid full name (letters only)', 'error');
-  if (!isValidEmailFormat(email)) return showToast('Enter a valid email address', 'error');
+  const rollRegex = /^\d{1,10}$/;
+  if (!rollRegex.test(roll)) return showToast('Roll number must contain only digits (up to 10).', 'error');
 
-  // Student-only verification gate
   const sanitizedName = name.replace(/\s+/g, '').toUpperCase();
-  const expectedEmail = `${sanitizedName}.${rollRaw}@gehu.ac.in`;
+  const expectedEmail = `${sanitizedName}.${roll}@gehu.ac.in`;
+  if (email !== expectedEmail) return showToast(`Email must exactly match: ${expectedEmail}`, 'error');
 
-  if (!roll) return showToast('Roll number is required for students', 'error');
-  if (!isValidRollFormat(roll)) return showToast('Roll format must look like BCA2023001', 'error');
-  if (emailRaw !== expectedEmail) return showToast('Email must exactly match the format: UPPERCASENAME.RollNo@gehu.ac.in', 'error');
-  if (!allowedStudents.includes(emailRaw)) return showToast('Student ID not recognized or not authorized.', 'error');
+  const allowedStudents = ['KETANVERMA.241741005@gehu.ac.in'];
+  if (!allowedStudents.includes(email)) return showToast('Student ID not recognized or authorized.', 'error');
 
   // FIX 3: Password strength — require at least 8 chars + 1 uppercase + 1 number
   if (password.length < 8) return showToast('Password must be at least 8 characters', 'error');
@@ -409,7 +401,6 @@ async function handleRegister() {
   if (password !== confirm) return showToast('Passwords do not match', 'error');
 
   // FIX 6: CAPTCHA check
-  const userAnswer = parseInt(document.getElementById('captcha-answer').value, 10);
   if (isNaN(userAnswer) || userAnswer !== captchaAnswer) {
     newCaptcha();
     return showToast('Incorrect answer — please solve the math question', 'error');
