@@ -427,26 +427,43 @@ async function handleLogin() {
 }
 
 // ── REGISTER ─────────────────────────────────────────────
+// ── REGISTER ─────────────────────────────────────────────
 async function handleRegister() {
   const name     = normalizeSpaces(document.getElementById('reg-name').value);
-  const roll     = document.getElementById('reg-roll').value;
-  const email    = document.getElementById('reg-email').value;
+  const roll     = document.getElementById('reg-roll').value.trim(); // User entered Student ID/Roll
+  const email    = document.getElementById('reg-email').value.trim(); // User entered Email
   const dept     = document.getElementById('reg-dept').value;
   const password = document.getElementById('reg-password').value;
   const confirm  = document.getElementById('reg-confirm').value;
   const userAnswer = parseInt(document.getElementById('captcha-answer').value, 10);
 
-  if (!name || !email || !password || !dept) return showToast('Please fill all fields', 'error');
+  if (!name || !email || !password || !dept || !roll) return showToast('Please fill all fields', 'error');
 
   const rollRegex = /^\d{1,10}$/;
   if (!rollRegex.test(roll)) return showToast('Roll number must contain only digits (up to 10).', 'error');
 
-  const sanitizedName = name.replace(/\s+/g, '').toUpperCase();
-  const expectedEmail = `${sanitizedName}.${roll}@gehu.ac.in`;
-  if (email !== expectedEmail) return showToast(`Email must exactly match: ${expectedEmail}`, 'error');
+  // --- THE NEW STRICT VALIDATION ---
+  
+  // 1. Must be a college email
+  if (!email.toLowerCase().endsWith('@gehu.ac.in') && !email.toLowerCase().endsWith('@geu.ac.in')) {
+    return showToast('Only valid @gehu.ac.in or @geu.ac.in emails are allowed.', 'error');
+  }
 
-  const allowedStudents = ['KETANVERMA.241741005@gehu.ac.in'];
-  if (!allowedStudents.includes(email)) return showToast('Student ID not recognized or authorized.', 'error');
+  // 2. Extract the number from the email (e.g., from "mahendra.241741003@gehu.ac.in")
+  const numberFromEmailMatch = email.match(/\d+/);
+  
+  if (!numberFromEmailMatch) {
+    return showToast('Your college email must contain your Roll Number.', 'error');
+  }
+  
+  const emailRollNumber = numberFromEmailMatch[0];
+
+  // 3. Ensure the Form Roll Number matches the Email Roll Number EXACTLY
+  if (roll !== emailRollNumber) {
+    return showToast('Student ID not recognized or authorized. It must match your Email ID.', 'error');
+  }
+
+  // --- END OF NEW VALIDATION ---
 
   // FIX 3: Password strength — require at least 8 chars + 1 uppercase + 1 number
   if (password.length < 8) return showToast('Password must be at least 8 characters', 'error');
@@ -471,17 +488,17 @@ async function handleRegister() {
     options: {
       data: {
         name: name,
-        roll_number: roll,
+        roll_number: roll, // Now sending the confirmed roll number
         department: dept,
         role: 'student'
       }
     }
   });
+  
   if (error) {
     setLoading('reg', false);
     newCaptcha();
     if (error.message.toLowerCase().includes('already registered')) return showToast('Email already exists. Try signing in.', 'error');
-    // FIX 1: Rate limit during signup
     if (error.message.toLowerCase().includes('rate') || error.message.toLowerCase().includes('too many')) {
       return showToast('Too many sign-up attempts. Please wait a few minutes and try again.', 'error');
     }
@@ -502,7 +519,6 @@ async function handleRegister() {
     if (!e2 && d2.user) { redirecting = true; redirectByRole(d2.user); }
   }, 800);
 }
-
 // ── Helpers ──────────────────────────────────────────────
 
 // FIX 5: setLoading now also enables/disables the button element
